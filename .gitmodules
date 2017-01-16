@@ -1,0 +1,6 @@
+[submodule "dm-to-rms/cpp/azmq"]
+	path = dm-to-rms/cpp/azmq
+	url = git@github.com:zeromq/azmq.git
+[submodule "dm-to-rms/recognition/azmq"]
+	path = dm-to-rms/recognition/azmq
+	url = git@github.com:zeromq/azmq.git
