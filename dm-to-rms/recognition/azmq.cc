@@ -2,6 +2,7 @@
 #include <sstream>
 #include <iostream>
 #include <iomanip>
+#include "recognition.h"
 
 #include <envelope.pb.h>
 #include <faceextract-v1m0.pb.h>
@@ -46,6 +47,11 @@ std::string string_to_hex(const std::string& input) {
 }
 
 int main() {
+    Recogniser recogniser;
+    std::vector<uint8_t> image;
+    recogniser.recognise(image);
+    std::cout << "r" << std::endl;
+
     // Use the generated class from the protocol definition
     faceextract::v1m0::ExtractFace extractFace;
     extractFace.set_mime_type("image/png");
