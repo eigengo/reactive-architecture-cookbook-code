@@ -13,7 +13,7 @@ import "google/protobuf/any.proto";
 // be encrypted.
 message Envelope {
   // the correlationId, set at ingestion
-  string correlationId = 1;
+  string correlation_id = 1;
   // the payload itself; a protobuf-encoded value
   google.protobuf.Any payload = 4;
 }

@@ -2,6 +2,6 @@ syntax = "proto3";
 package com.reactivearchitecturecookbook.faceextract.v1m0;
 
 message ExtractFace {
-  string mimeType = 1;
+  string mime_type = 1;
   bytes content = 2;
 }

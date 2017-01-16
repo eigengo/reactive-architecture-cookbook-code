@@ -21,7 +21,7 @@ using namespace com::reactivearchitecturecookbook;
 Envelope new_envelope_with_payload(google::protobuf::Message &payload) {
     Envelope envelope;
     auto uuid = boost::uuids::basic_random_generator<boost::mt19937>()();
-    envelope.set_correlationid(to_string(uuid));
+    envelope.set_correlation_id(to_string(uuid));
     envelope.mutable_payload()->PackFrom(payload);
     return envelope;
 }
@@ -48,7 +48,7 @@ std::string string_to_hex(const std::string& input) {
 int main() {
     // Use the generated class from the protocol definition
     faceextract::v1m0::ExtractFace extractFace;
-    extractFace.set_mimetype("image/png");
+    extractFace.set_mime_type("image/png");
     extractFace.set_content("<png-bytes>");
 
     // wrap it in an envelope
