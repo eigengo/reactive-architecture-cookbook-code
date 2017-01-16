@@ -1,0 +1,19 @@
+syntax = "proto3";
+package com.reactivearchitecturecookbook;
+
+import "google/protobuf/any.proto";
+
+// This is a common envelope for *all* messages in the system.
+// We only care about the correlationId, which allows us to track the messages in the
+// distributed system; the version, which, together with payloadType tells us how to
+// deserialize payload.
+//
+// It is possible that some services will not even bother parsing the payload: some
+// don't care (e.g. counting, billing, ...); some can't, because the payload might
+// be encrypted.
+message Envelope {
+  // the correlationId, set at ingestion
+  string correlationId = 1;
+  // the payload itself; a protobuf-encoded value
+  google.protobuf.Any payload = 4;
+}
