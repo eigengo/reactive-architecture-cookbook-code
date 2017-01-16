@@ -2,7 +2,6 @@
 #include <sstream>
 #include <iostream>
 #include <iomanip>
-#include <memory>
 
 #include <envelope.pb.h>
 #include <faceextract-v1m0.pb.h>
