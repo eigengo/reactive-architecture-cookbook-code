@@ -14,7 +14,7 @@ namespace com {
              * @param image the bytes that make up the input image
              * @returns the area of the image that has been recognised
              */
-            cv::Mat recognise(cv::Mat &&image);
+            cv::Mat recognise(const cv::Mat &&image);
         };
 
     }

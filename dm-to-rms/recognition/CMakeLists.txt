@@ -35,4 +35,4 @@ add_subdirectory(${azmq_SOURCE_DIR} ${azmq_BINARY_DIR})
 include_directories("${azmq_SOURCE_DIR}/include")
 
 add_executable(main ${PROTO_HEADER} ${PROTO_SRC} main.cc)
-target_link_libraries(main recognition azmq ${PROTOBUF_LIBRARY})
+target_link_libraries(main recognition ${PROTOBUF_LIBRARY})

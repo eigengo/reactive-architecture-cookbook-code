@@ -3,6 +3,6 @@
 
 using namespace com::reactivearchitecturecookbook;
 
-cv::Mat recogniser::recognise(cv::Mat &&image) {
+cv::Mat recogniser::recognise(const cv::Mat &&image) {
     return image;
 }
