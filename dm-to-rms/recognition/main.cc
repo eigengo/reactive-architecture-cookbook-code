@@ -34,8 +34,8 @@ Envelope new_envelope_with_payload(google::protobuf::Message &payload) {
  * @param input the input string
  * @return the hex representation of `input`
  */
-std::string string_to_hex(const std::string& input) {
-    static const char* const lut = "0123456789ABCDEF";
+std::string string_to_hex(const std::string &input) {
+    static const char *const lut = "0123456789ABCDEF";
     size_t len = input.length();
 
     std::string output;
@@ -52,21 +52,27 @@ namespace asio = boost::asio;
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmissing-noreturn"
-[[noreturn]]
-int main(int args, char **argv) {
-    asio::io_service ios;
-    azmq::sub_socket subscriber(ios);
 
-    for (int i = 1; i < args; i++) {
-        subscriber.connect(argv[i]);
-    }
-    subscriber.set_option(azmq::socket::subscribe("faceextract-1.0.0"));
+[[noreturn]]
+int main(int argc, char **argv) {
+    asio::io_service ios1;
+    azmq::sub_socket subscriber(ios1, ZMQ_DEALER);
+    azmq::pub_socket publisher(ios1, ZMQ_ROUTER);
+    publisher.bind("ipc://foo");
+    subscriber.connect("ipc://foo");
 
     while (true) {
-        std::array<unsigned char, 1024*1024> buf;
-        subscriber.receive(asio::buffer(buf));
-    }
+        std::cout << "." << std::endl;
+        sleep(1);
+        std::array<unsigned char, 1024> buf;
+        publisher.send(asio::buffer(buf));
+        subscriber.async_receive([](const boost::system::error_code, azmq::message, size_t) {
+            std::cout << "x" << std::endl;
+        });
 
+        ios1.run();
+    }
+/*
     recogniser recogniser;
     cv::Mat image;
     recogniser.recognise(std::forward<cv::Mat>(image));
@@ -91,5 +97,7 @@ int main(int args, char **argv) {
     std::string raw;
     msg.SerializeToString(&raw);
     std::cout << "bytes: " << string_to_hex(raw) << std::endl;
+*/
 }
+
 #pragma clang diagnostic pop

@@ -6,7 +6,7 @@ project (all)
 include(DownloadProject.cmake)
 include(FindProtobuf)
 find_package(Protobuf REQUIRED)
-find_package(Boost COMPONENTS system REQUIRED)
+find_package(Boost COMPONENTS system regex REQUIRED)
 enable_testing()
 
 include_directories(include)
