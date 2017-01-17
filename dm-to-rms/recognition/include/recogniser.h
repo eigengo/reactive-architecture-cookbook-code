@@ -6,7 +6,7 @@
 namespace com {
     namespace reactivearchitecturecookbook {
 
-        class Recogniser {
+        class recogniser {
         public:
             /**
              * Recognises configured objects on the input
@@ -14,7 +14,7 @@ namespace com {
              * @param image the bytes that make up the input image
              * @returns the area of the image that has been recognised
              */
-            cv::Mat recognise(cv::Mat& image);
+            cv::Mat recognise(cv::Mat &&image);
         };
 
     }

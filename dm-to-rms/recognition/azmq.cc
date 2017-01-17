@@ -2,7 +2,7 @@
 #include <sstream>
 #include <iostream>
 #include <iomanip>
-#include "recognition.h"
+#include "recogniser.h"
 
 #include <envelope.pb.h>
 #include <faceextract-v1m0.pb.h>
@@ -47,9 +47,9 @@ std::string string_to_hex(const std::string& input) {
 }
 
 int main() {
-    Recogniser recogniser;
+    recogniser recogniser;
     cv::Mat image;
-    recogniser.recognise(image);
+    recogniser.recognise(std::forward<cv::Mat>(image));
     std::cout << "r" << std::endl;
 
     // Use the generated class from the protocol definition

@@ -1,8 +1,8 @@
 #include <string>
-#include "recognition.h"
+#include "recogniser.h"
 
 using namespace com::reactivearchitecturecookbook;
 
-cv::Mat Recogniser::recognise(cv::Mat &image) {
+cv::Mat recogniser::recognise(cv::Mat &&image) {
     return image;
 }
