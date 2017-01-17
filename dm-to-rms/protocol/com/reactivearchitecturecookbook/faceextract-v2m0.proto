@@ -4,5 +4,11 @@ package com.reactivearchitecturecookbook.faceextract.v2m0;
 message ExtractFace {
   string mime_type = 1;
   bytes content = 2;
-  int32 something = 3;
+  double rotation_hint = 3;
+}
+
+message ExtractedFace {
+  string mime_type = 1;
+  repeated bytes faces = 2;
+  double rotation_applied = 3;
 }

@@ -1,6 +1,7 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <opencv/cv.hpp>
 
 namespace com {
     namespace reactivearchitecturecookbook {
@@ -8,11 +9,12 @@ namespace com {
         class Recogniser {
         public:
             /**
-             * Recognises configured objects on the input, which should be an image
+             * Recognises configured objects on the input
+             *
              * @param image the bytes that make up the input image
              * @returns the area of the image that has been recognised
              */
-            std::vector<uint8_t> recognise(std::vector<uint8_t> &image);
+            cv::Mat recognise(cv::Mat& image);
         };
 
     }

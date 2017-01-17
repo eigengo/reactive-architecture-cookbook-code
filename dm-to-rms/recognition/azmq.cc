@@ -48,7 +48,7 @@ std::string string_to_hex(const std::string& input) {
 
 int main() {
     Recogniser recogniser;
-    std::vector<uint8_t> image;
+    cv::Mat image;
     recogniser.recognise(image);
     std::cout << "r" << std::endl;
 
