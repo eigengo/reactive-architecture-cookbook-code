@@ -2,6 +2,8 @@
 #include <sstream>
 #include <iostream>
 #include <iomanip>
+#include <azmq/socket.hpp>
+#include <boost/asio.hpp>
 #include "recogniser.h"
 
 #include <envelope.pb.h>
@@ -46,7 +48,12 @@ std::string string_to_hex(const std::string& input) {
     return output;
 }
 
+namespace asio = boost::asio;
+
 int main() {
+    asio::io_service ios;
+    azmq::sub_socket subscriber(ios);
+
     recogniser recogniser;
     cv::Mat image;
     recogniser.recognise(std::forward<cv::Mat>(image));
