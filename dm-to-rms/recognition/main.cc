@@ -50,9 +50,22 @@ std::string string_to_hex(const std::string& input) {
 
 namespace asio = boost::asio;
 
-int main() {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmissing-noreturn"
+[[noreturn]]
+int main(int args, char **argv) {
     asio::io_service ios;
     azmq::sub_socket subscriber(ios);
+
+    for (int i = 1; i < args; i++) {
+        subscriber.connect(argv[i]);
+    }
+    subscriber.set_option(azmq::socket::subscribe("faceextract-1.0.0"));
+
+    while (true) {
+        std::array<unsigned char, 1024*1024> buf;
+        subscriber.receive(asio::buffer(buf));
+    }
 
     recogniser recogniser;
     cv::Mat image;
@@ -79,3 +92,4 @@ int main() {
     msg.SerializeToString(&raw);
     std::cout << "bytes: " << string_to_hex(raw) << std::endl;
 }
+#pragma clang diagnostic pop
