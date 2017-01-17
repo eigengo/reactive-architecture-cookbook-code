@@ -55,23 +55,23 @@ namespace asio = boost::asio;
 
 [[noreturn]]
 int main(int argc, char **argv) {
-    asio::io_service ios1;
-    azmq::sub_socket subscriber(ios1, ZMQ_DEALER);
-    azmq::pub_socket publisher(ios1, ZMQ_ROUTER);
-    publisher.bind("ipc://foo");
-    subscriber.connect("ipc://foo");
+    asio::io_service ios_s, ios_p;
+    azmq::sub_socket subscriber(ios_s);
+    azmq::pub_socket publisher(ios_p);
+    publisher.bind("tcp://127.0.0.1:*[60000-]");
+    std::cout << publisher.endpoint() << std::endl;
+    //subscriber.connect("tcp://sss:5555");
 
     while (true) {
-        std::cout << "." << std::endl;
         sleep(1);
-        std::array<unsigned char, 1024> buf;
-        publisher.send(asio::buffer(buf));
-        subscriber.async_receive([](const boost::system::error_code, azmq::message, size_t) {
-            std::cout << "x" << std::endl;
+        std::array<unsigned char, 1> buf;
+        auto sent = publisher.send(asio::buffer(buf));
+        std::cout << "sent " << sent << std::endl;
+        subscriber.async_receive([](const boost::system::error_code, azmq::message, size_t size) {
+            std::cout << "received " << size << std::endl;
         });
-
-        ios1.run();
     }
+
 /*
     recogniser recogniser;
     cv::Mat image;
