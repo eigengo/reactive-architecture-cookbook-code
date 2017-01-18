@@ -30,7 +30,7 @@ download_project(PROJ       azmq
 
 list(APPEND CMAKE_MODULE_PATH "${azmq_SOURCE_DIR}/config/")
 find_package(ZeroMQ 4.0 REQUIRED)
-include_directories("${azmq_SOURCE_DIR}/include")
+include_directories("${azmq_SOURCE_DIR}")
 
 add_executable(main ${PROTO_HEADER} ${PROTO_SRC} main.cc)
 target_link_libraries(main recognition ${PROTOBUF_LIBRARY} ${Boost_LIBRARIES} ${ZeroMQ_LIBRARIES})
