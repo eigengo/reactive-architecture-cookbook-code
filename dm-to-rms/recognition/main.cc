@@ -29,6 +29,13 @@ Envelope new_envelope_with_payload(google::protobuf::Message &payload) {
     return envelope;
 }
 
+Envelope reply_to(Envelope &envelope, google::protobuf::Message &payload) {
+    Envelope reply_envelope;
+    reply_envelope.set_correlation_id(envelope.correlation_id());
+    reply_envelope.mutable_payload()->PackFrom(payload);
+    return reply_envelope;
+}
+
 /**
  * This is a copy-and-paste from SO: formats characters in `input` as their hex values
  * @param input the input string
@@ -52,27 +59,60 @@ namespace asio = boost::asio;
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmissing-noreturn"
-
+/**
+ * Implements the main loop in the worker
+ */
 [[noreturn]]
+void main_loop(azmq::pull_socket &in, azmq::push_socket &out) {
+    while (true) {
+        azmq::message in_data;
+        in.receive(in_data);
+        std::cout << "." << std::endl;
+        Envelope envelope;
+        envelope.ParseFromArray(in_data.data(), in_data.size());
+        if (envelope.payload().Is<faceextract::v1m0::ExtractFace>()) {
+            faceextract::v1m0::ExtractFace extractFace;
+            envelope.payload().UnpackTo(&extractFace);
+
+            std::cout << "Extracting from " << extractFace.mime_type() << std::endl;
+
+            faceextract::v1m0::ExtractedFace extractedFace;
+            auto response = reply_to(envelope, extractedFace);
+            auto out_data = asio::buffer(response.SerializeAsString());
+            out.send(out_data);
+        }
+    }
+}
+
+#pragma clang diagnostic pop
+
 int main(int argc, char **argv) {
+    asio::io_service ios;
+    azmq::pull_socket in(ios);
+    azmq::push_socket out(ios);
+
+    in.connect("tcp://localhost:5555");
+    out.bind("tcp://*:5556");
+
+    main_loop(in, out);
+/*
+
     asio::io_service ios_s, ios_p;
     azmq::sub_socket subscriber(ios_s);
     azmq::pub_socket publisher(ios_p);
-    publisher.bind("tcp://127.0.0.1:*[60000-]");
-    std::cout << publisher.endpoint() << std::endl;
-    //subscriber.connect("tcp://sss:5555");
+    publisher.bind("tcp:// *:5556");
+    subscriber.connect("tcp://localhost:5556");
+    subscriber.set_option(azmq::socket::subscribe(""));
 
     while (true) {
         sleep(1);
-        std::array<unsigned char, 1> buf;
-        auto sent = publisher.send(asio::buffer(buf));
+        auto sent = publisher.send(azmq::message("fpop"));
         std::cout << "sent " << sent << std::endl;
-        subscriber.async_receive([](const boost::system::error_code, azmq::message, size_t size) {
-            std::cout << "received " << size << std::endl;
-        });
+        azmq::message received;
+        subscriber.receive(received);
+        std::cout << received.string() << std::endl;
     }
 
-/*
     recogniser recogniser;
     cv::Mat image;
     recogniser.recognise(std::forward<cv::Mat>(image));
@@ -100,4 +140,3 @@ int main(int argc, char **argv) {
 */
 }
 
-#pragma clang diagnostic pop
