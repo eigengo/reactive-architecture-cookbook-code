@@ -25,9 +25,6 @@ object Main extends App {
       val x = out.send(Envelope(UUID.randomUUID().toString, Some(payload)).toByteArray)
       println(s"Sent $x")
       Envelope.parseFrom(in.recv()).toString
-    }
-      .recover { case _ ⇒ "Failure" }
-      .foreach { println }
-
+    }.recover { case _ ⇒ "Failure" }.foreach { println }
   }
 }
