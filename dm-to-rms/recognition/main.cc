@@ -30,10 +30,19 @@ namespace po = boost::program_options;
  */
 [[noreturn]]
 void main_loop(azmq::pull_socket &in, azmq::push_socket &out) {
+    unsigned int sleep_time = 1;
+
     while (true) {
         azmq::message in_data;
-        in.receive(in_data);
-        std::cout << "." << std::endl;
+        boost::system::error_code ec;
+        in.receive(in_data, azmq::socket::flags_type(0), ec);
+        if (ec) {
+            std::cerr << "receive failed. backing off for " << sleep_time << std::endl;
+            sleep(sleep_time);
+            sleep_time *= 2;
+            continue;
+        }
+
         Envelope envelope;
         envelope.ParseFromArray(in_data.data(), static_cast<int>(in_data.size()));
         if (envelope.payload().Is<faceextract::v1m0::ExtractFace>()) {
@@ -47,10 +56,19 @@ void main_loop(azmq::pull_socket &in, azmq::push_socket &out) {
             auto response = Envelope(envelope);
             response.mutable_payload()->PackFrom(extractedFace);
             auto out_data = asio::buffer(response.SerializeAsString());
-            out.send(out_data);
+            out.send(out_data, azmq::socket::flags_type(0), ec);
+
+            if (ec) {
+                std::cerr << "send failed. backing off for " << sleep_time << std::endl;
+                sleep(sleep_time);
+                sleep_time *= 2;
+                continue;
+            }
         } else {
             out.send(azmq::message("boo!"));
         }
+
+        sleep_time = std::max<unsigned int>(sleep_time / 2, 1);
     }
 }
 
@@ -60,6 +78,8 @@ int main(int argc, const char *argv[]) {
     asio::io_service ios;
     azmq::pull_socket in(ios);
     azmq::push_socket out(ios);
+    in.set_option(azmq::socket::rcv_timeo(1000));
+    out.set_option(azmq::socket::snd_timeo(1000));
 
     std::vector<std::string> in_addresses{"tcp://localhost:5555"};
     std::vector<std::string> out_bindings{"tcp://*:5556"};
