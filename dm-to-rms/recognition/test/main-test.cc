@@ -9,7 +9,17 @@ using namespace com::reactivearchitecturecookbook;
 
 class main_test : public testing::Test {
 protected:
+    template<typename T>
+    rc::Gen<T> pb(const T &message);
 };
+
+template<typename T>
+rc::Gen<T> main_test::pb(const T &message) {
+    T gen;
+    gen.CopyFrom(message);
+
+    message.GetReflection()->SetString(&gen, message.GetDescriptor()->FindFieldByName("x"), "");
+}
 
 RC_GTEST_FIXTURE_PROP(main_test, handle_extract_face, (const faceextract::v1m0::ExtractFace &gen)) {
     faceextract::v1m0::ExtractFace ser;
@@ -28,11 +38,12 @@ TEST_F(main_test, x) {
     const google::protobuf::Descriptor *descriptor = extractFace.descriptor();
     for (int i = 0; i < descriptor->field_count(); ++i) {
         const google::protobuf::FieldDescriptor *fieldDescriptor = descriptor->field(i);
-        switch (fieldDescriptor->cpp_type()) {
-            case google::protobuf::FieldDescriptor::CppType::CPPTYPE_STRING:
-                std::cout << fieldDescriptor->name() << std::endl;
+
+        switch (fieldDescriptor->type()) {
+            case google::protobuf::FieldDescriptor::Type::TYPE_STRING:
                 break;
-            default: break;
+            case google::protobuf::FieldDescriptor::Type::TYPE_BYTES:
+                break;
         }
     }
 
