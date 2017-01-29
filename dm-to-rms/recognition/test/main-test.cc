@@ -9,7 +9,6 @@ using namespace com::reactivearchitecturecookbook;
 
 class main_test : public testing::Test {
 protected:
-    bool x(const faceextract::v1m0::ExtractFace &ef);
 };
 
 RC_GTEST_FIXTURE_PROP(main_test, handle_extract_face, (const faceextract::v1m0::ExtractFace &gen)) {
