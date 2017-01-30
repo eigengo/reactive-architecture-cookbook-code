@@ -6,6 +6,25 @@
 
 using namespace com::reactivearchitecturecookbook;
 
+#include <type_traits>
+template<typename T>
+class protobuf_gen {
+    static_assert(std::is_base_of<google::protobuf::Message, T>::value, "T must extend google::protobuf::Message");
+public:
+
+    rc::Gen<T> pb() {
+        return [](const rc::Random &random, int size) {
+            T gen(T::default_instance());
+            gen.GetReflection()->SetString(&gen, gen.GetDescriptor()->FindFieldByName("x"), "");
+
+            return rc::gen::just(gen);
+        };
+    }
+
+
+};
+
+
 // NOTE: Must be in rc namespace!
 namespace rc {
 
