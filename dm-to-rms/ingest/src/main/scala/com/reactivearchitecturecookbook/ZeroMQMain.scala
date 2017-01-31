@@ -7,7 +7,7 @@ import org.zeromq.{ZContext, ZMQ}
 
 import scala.util.Try
 
-object Main extends App {
+object ZeroMQMain extends App {
   val context = new ZContext(2)
   val out = context.createSocket(ZMQ.PUSH)
   val in = context.createSocket(ZMQ.SUB)
