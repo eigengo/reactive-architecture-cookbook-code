@@ -2,41 +2,49 @@
 #include <sstream>
 #include <iostream>
 #include <iomanip>
-#include <azmq/socket.hpp>
 #include <boost/asio.hpp>
 #include <boost/program_options.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
+#include <boost/filesystem.hpp>
 #include <google/protobuf/util/json_util.h>
 #include <nghttp2/asio_http2_server.h>
+#include <libkafka_asio/libkafka_asio.h>
 
 namespace asio = boost::asio;
 namespace po = boost::program_options;
 namespace ah = nghttp2::asio_http2;
 namespace bs = boost::system;
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wmissing-noreturn"
-
-/**
- * Implements the main loop in the worker
- *
- * \param in the pulling socket
- * \param out the output pushing socket
- * \remark this function diverges
- */
-[[noreturn]]
-void main_loop() {
-    while (true);
-}
-
-#pragma clang diagnostic pop
+namespace fs = boost::filesystem;
+namespace kafka = libkafka_asio;
 
 int main(int argc, const char *argv[]) {
     ah::server::http2 server;
+    kafka::Connection::Configuration configuration;
+    std::string topic_name = "ingest-1.0.0";
+    fs::path server_key, server_cert;
+    configuration.auto_connect = true;
+    configuration.client_id = "ingest-1.0.0";
+    configuration.socket_timeout = 10000;
+    kafka::ConnectionConfiguration::BrokerAddress broker_address{.hostname = "a", .service = "b"};
+    configuration.broker_address = broker_address;
+
+    asio::io_service kafka_ios;
+    kafka::Connection connection(kafka_ios, configuration);
+
+    server.handle("/", [&connection, &topic_name](const auto &http_req, const auto &http_resp) {
+        kafka::ProduceRequest kafka_req;
+        kafka::Bytes bytes;
+        kafka_req.AddValue(bytes, topic_name);
+        connection.AsyncRequest(kafka_req, [&http_resp](const auto &err, const auto &kafka_resp) {
+            if (err) http_resp.write_head(500);
+            else http_resp.write_head(200);
+            http_resp.end("done");
+        });
+    });
 
     std::string style_css = "h1 { color: green; }";
-    server.handle("/", [&style_css](const ah::server::request &request, const ah::server::response &response) {
+    server.handle("/index.html", [&style_css](const ah::server::request &request, const ah::server::response &response) {
         boost::system::error_code ec;
         auto push = response.push(ec, "GET", "/style.css");
         push->write_head(200);
