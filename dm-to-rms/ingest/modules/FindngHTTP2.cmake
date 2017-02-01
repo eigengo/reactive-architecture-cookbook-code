@@ -25,6 +25,14 @@ find_library( NGHTTP2_LIBRARY
   PATHS /usr/local/lib /usr/lib
 )
 
+find_library( NGHTTP2_ASIO_LIBRARY
+  NAMES nghttp2_asio
+  HINTS
+    "${NGHTTP2_LIBDIR}"
+    "${NGHTTP2_HINTS}/lib"
+  PATHS /usr/local/lib /usr/lib
+)
+
 include( FindPackageHandleStandardArgs )
 find_package_handle_standard_args( Nghttp2 DEFAULT_MSG NGHTTP2_INCLUDE_DIR NGHTTP2_LIBRARY )
 
