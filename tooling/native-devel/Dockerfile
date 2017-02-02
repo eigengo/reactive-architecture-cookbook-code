@@ -16,9 +16,11 @@ FROM oreilly/rac-native-runtime:latest
 # cuda-cudart-dev-$CUDA_PKG_VERSION \
 # cuda-driver-dev-$CUDA_PKG_VERSION \
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-      protobuf-compiler \
-      && \
-    rm -rf /var/lib/apt/lists/*
+# RUN apt-get update && apt-get install -y --no-install-recommends \
+#       protobuf-compiler \
+#       && \
+#      rm -rf /var/lib/apt/lists/*
+
+ADD run.sh /usr/bin/run.sh
 
 ENV LIBRARY_PATH /usr/local/cuda/lib64/stubs:${LIBRARY_PATH}

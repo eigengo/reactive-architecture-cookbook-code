@@ -4,6 +4,7 @@ IMAGE=""
 CMD="/bin/bash"
 if [ -e $PWD/CMakeLists.txt ]; then
     IMAGE="oreilly/rac-native-devel"
+    CMD=/usr/bin/run.sh
 elif [ -e $PWD/build.sbt ]; then
     IMAGE="oreilly/rac-jvm-devel"
 fi
