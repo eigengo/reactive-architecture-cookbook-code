@@ -1,10 +1,12 @@
 #!/bin/sh
 
 IMAGE=""
+CMD="/bin/bash"
 if [ -e $PWD/CMakeLists.txt ]; then
     IMAGE="oreilly/rac-native-devel"
 elif [ -e $PWD/build.sbt ]; then
     IMAGE="oreilly/rac-jvm-devel"
 fi
 
-docker run -t -i -v $PWD:/var/src $IMAGE /bin/bash
+PROTO_SRC=$PWD/../protocol
+docker run -t -i -v $PWD:/var/src/module -v $PROTO_SRC:/var/src/protocol $IMAGE $CMD

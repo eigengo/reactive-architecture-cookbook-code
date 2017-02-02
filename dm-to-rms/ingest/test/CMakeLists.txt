@@ -5,7 +5,6 @@ project(main-test)
 
 include_directories("${gtest_SOURCE_DIR}/include" "${gmock_SOURCE_DIR}/include")
 
-find_package(OpenCV 3 REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 download_project(PROJ       rapidcheck
         GIT_REPOSITORY      https://github.com/emil-e/rapidcheck

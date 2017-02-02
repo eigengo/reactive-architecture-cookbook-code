@@ -22,8 +22,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         cuda-npp-$CUDA_PKG_VERSION \
         cuda-cudart-$CUDA_PKG_VERSION \
         libboost-all-dev \
-        librdkafka1 \
-        libsnappy-dev \
+        libprotobuf-dev \
+        ca-certificates \
         openssl \
         && \
     ln -s cuda-$CUDA_VERSION /usr/local/cuda && \

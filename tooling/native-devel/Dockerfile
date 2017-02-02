@@ -14,11 +14,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         cuda-cusparse-dev-$CUDA_PKG_VERSION \
         cuda-npp-dev-$CUDA_PKG_VERSION \
         cuda-cudart-dev-$CUDA_PKG_VERSION \
-        cuda-driver-dev-$CUDA_PKG_VERSION && \
-        librdkafka-dev \
+        cuda-driver-dev-$CUDA_PKG_VERSION \
         libsnappy-dev \
-        openssl-dev \
+        libssl-dev \
+        libnghttp2-dev \
+        git \
         gcc \
+        g++ \
+        cmake && \
     rm -rf /var/lib/apt/lists/*
 
 ENV LIBRARY_PATH /usr/local/cuda/lib64/stubs:${LIBRARY_PATH}

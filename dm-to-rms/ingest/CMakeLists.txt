@@ -8,7 +8,7 @@ set(OPENSSL_ROOT_DIR /usr/local/opt/openssl)
 
 include(DownloadProject.cmake)
 include(FindProtobuf)
-find_package(LibRDKafka REQUIRED)
+# find_package(LibRDKafka REQUIRED)
 find_package(Protobuf REQUIRED)
 find_package(ngHTTP2 REQUIRED)
 find_package(OpenSSL REQUIRED)
