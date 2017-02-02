@@ -50,4 +50,4 @@ add_subdirectory(test)
 message(STATUS "*********** ${LibRDKafka_LIBRARIES} : ${SNAPPY_INCLUDE_DIR}")
 
 add_executable(main ${PROTO_HEADER} ${PROTO_SRC} main.cc)
-target_link_libraries(main ingest ${PROTOBUF_LIBRARY} ${Boost_LIBRARIES} ${NGHTTP2_LIBRARY} ${NGHTTP2_ASIO_LIBRARY} ${OPENSSL_LIBRARIES})
+target_link_libraries(main ingest pthread ${PROTOBUF_LIBRARY} ${Boost_LIBRARIES} ${NGHTTP2_LIBRARY} ${NGHTTP2_ASIO_LIBRARY} ${OPENSSL_LIBRARIES})

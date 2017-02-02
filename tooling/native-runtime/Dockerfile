@@ -11,23 +11,52 @@ ENV CUDA_VERSION 8.0
 
 ENV CUDA_PKG_VERSION 8-0=8.0.44-1
 
+# cuda-nvrtc-$CUDA_PKG_VERSION \
+# cuda-nvgraph-$CUDA_PKG_VERSION \
+# cuda-cusolver-$CUDA_PKG_VERSION \
+# cuda-cublas-$CUDA_PKG_VERSION \
+# cuda-cufft-$CUDA_PKG_VERSION \
+# cuda-curand-$CUDA_PKG_VERSION \
+# cuda-cusparse-$CUDA_PKG_VERSION \
+# cuda-npp-$CUDA_PKG_VERSION \
+# cuda-cudart-$CUDA_PKG_VERSION \
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        cuda-nvrtc-$CUDA_PKG_VERSION \
-        cuda-nvgraph-$CUDA_PKG_VERSION \
-        cuda-cusolver-$CUDA_PKG_VERSION \
-        cuda-cublas-$CUDA_PKG_VERSION \
-        cuda-cufft-$CUDA_PKG_VERSION \
-        cuda-curand-$CUDA_PKG_VERSION \
-        cuda-cusparse-$CUDA_PKG_VERSION \
-        cuda-npp-$CUDA_PKG_VERSION \
-        cuda-cudart-$CUDA_PKG_VERSION \
+        git \
+        libsnappy-dev \
+        libssl-dev \
         libboost-all-dev \
-        libprotobuf-dev \
         ca-certificates \
         openssl \
+        curl \
+        unzip \
+        automake \
+        libtool \
+        build-essential \
+        git \
+        gcc \
+        g++ \
+        cmake \
         && \
     ln -s cuda-$CUDA_VERSION /usr/local/cuda && \
     rm -rf /var/lib/apt/lists/*
+
+RUN git clone https://github.com/nghttp2/nghttp2 && \
+    cd nghttp2 && \
+    mkdir x && \
+    cd x && \
+    cmake -DENABLE_ASIO_LIB=ON .. && \
+    make install -j8 && \
+    rm -rf nghttp2 && \
+    ln -s /usr/local/libnghttp2.so /usr/lib/x86_64-linux-gnu/libnghttp2.so
+
+RUN git clone https://github.com/google/protobuf && \
+    cd protobuf && \
+    ./autogen.sh && \
+    ./configure --prefix=/usr && \
+    make -j8 install && \
+    rm -rf protobuf && \
+    ln -s /usr/lib/libprotobuf.so /usr/lib/x86_64-linux-gnu/libprotobuf.so
 
 RUN echo "/usr/local/cuda/lib64" >> /etc/ld.so.conf.d/cuda.conf && \
     ldconfig
