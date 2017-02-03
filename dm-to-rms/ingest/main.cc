@@ -25,45 +25,49 @@ int main(int argc, const char *argv[]) {
     fs::path server_key, server_cert;
     configuration.auto_connect = true;
     configuration.client_id = "ingest-1.0.0";
-    configuration.socket_timeout = 10000;
-    kafka::ConnectionConfiguration::BrokerAddress broker_address{.hostname = "a", .service = "b"};
-    configuration.broker_address = broker_address;
+    configuration.socket_timeout = 1000;
+    kafka::ConnectionConfiguration::BrokerAddress broker_address{.hostname = "192.168.0.7", .service = "2181"};
+    configuration.
 
     asio::io_service kafka_ios;
     kafka::Connection connection(kafka_ios, configuration);
+    connection.AsyncConnect([](const boost::system::error_code& error) {
+        std::cout << error << std::endl;
+    });
 
     server.handle("/", [&connection, &topic_name](const auto &http_req, const auto &http_resp) {
         kafka::ProduceRequest kafka_req;
-        kafka::Bytes bytes;
-        kafka_req.AddValue(bytes, topic_name);
+        kafka_req.AddValue("foo", topic_name);
+        std::cout << "->K" << std::endl;
         connection.AsyncRequest(kafka_req, [&http_resp](const auto &err, const auto &kafka_resp) {
+            std::cout << "=>K" << std::endl;
             if (err) http_resp.write_head(500);
             else http_resp.write_head(200);
             http_resp.end("done");
         });
     });
 
-    std::string style_css = "h1 { color: green; }";
-    server.handle("/index.html", [&style_css](const ah::server::request &request, const ah::server::response &response) {
-        boost::system::error_code ec;
-        auto push = response.push(ec, "GET", "/style.css");
-        push->write_head(200);
-        push->end(style_css);
-
-        response.write_head(200);
-        response.end(R"(
-<!DOCTYPE html><html lang="en">
-<title>HTTP/2 FTW</title><body>
-<link href="/style.css" rel="stylesheet" type="text/css">
-<h1>This should be green</h1>
-</body></html>
-)");
-    });
-
-    server.handle("/style.css", [&style_css](const ah::server::request &req, const ah::server::response &res) {
-        res.write_head(200);
-        res.end(style_css);
-    });
+//    std::string style_css = "h1 { color: green; }";
+//    server.handle("/index.html", [&style_css](const ah::server::request &request, const ah::server::response &response) {
+//        boost::system::error_code ec;
+//        auto push = response.push(ec, "GET", "/style.css");
+//        push->write_head(200);
+//        push->end(style_css);
+//
+//        response.write_head(200);
+//        response.end(R"(
+//<!DOCTYPE html><html lang="en">
+//<title>HTTP/2 FTW</title><body>
+//<link href="/style.css" rel="stylesheet" type="text/css">
+//<h1>This should be green</h1>
+//</body></html>
+//)");
+//    });
+//
+//    server.handle("/style.css", [&style_css](const ah::server::request &req, const ah::server::response &res) {
+//        res.write_head(200);
+//        res.end(style_css);
+//    });
 
     bs::error_code ec;
     asio::ssl::context tls(boost::asio::ssl::context::sslv23);
