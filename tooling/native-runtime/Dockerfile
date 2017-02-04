@@ -58,6 +58,13 @@ RUN git clone https://github.com/google/protobuf && \
     rm -rf protobuf && \
     ln -s /usr/lib/libprotobuf.so /usr/lib/x86_64-linux-gnu/libprotobuf.so
 
+RUN git clone https://github.com/edenhill/librdkafka && \
+    cd librdkafka && \
+    ./configure --prefix=/usr && \
+    make -j8 install && \
+    rm -rf librdkafka && \
+    ln -s /usr/lib/librdkafka.so /usr/lib/x86_64-linux-gnu/librdkafka.so
+
 RUN echo "/usr/local/cuda/lib64" >> /etc/ld.so.conf.d/cuda.conf && \
     ldconfig
 
