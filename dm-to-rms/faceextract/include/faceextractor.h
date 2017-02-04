@@ -6,7 +6,7 @@
 namespace com {
     namespace reactivearchitecturecookbook {
 
-        class recogniser {
+        class face_exctactor {
         public:
             /**
              * Recognises configured objects on the input
@@ -14,7 +14,7 @@ namespace com {
              * @param image the bytes that make up the input image
              * @returns the area of the image that has been recognised
              */
-            cv::Mat recognise(const cv::Mat &&image);
+            std::vector<cv::Mat> extract(const cv::Mat &&image);
         };
 
     }

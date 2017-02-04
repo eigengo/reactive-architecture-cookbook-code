@@ -3,10 +3,13 @@ set(CMAKE_CXX_STANDARD 14)
 
 project (all)
 
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/modules)
+
 include(DownloadProject.cmake)
 include(FindProtobuf)
 find_package(Protobuf REQUIRED)
 find_package(Boost COMPONENTS system regex program_options REQUIRED)
+find_package(LibRDKafka REQUIRED)
 enable_testing()
 
 download_project(PROJ       googletest
@@ -25,19 +28,9 @@ set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
 include_directories(${PROTOBUF_INCLUDE_DIR})
 
 include_directories(include)
-add_subdirectory(recognition)
-add_subdirectory(recognition-test)
+add_subdirectory(faceextract)
+add_subdirectory(faceextract-test)
 add_subdirectory(test)
 
-download_project(PROJ       azmq
-        GIT_REPOSITORY      https://github.com/zeromq/azmq.git
-        GIT_TAG             master
-        ${UPDATE_DISCONNECTED_IF_AVAILABLE}
-        )
-
-list(APPEND CMAKE_MODULE_PATH "${azmq_SOURCE_DIR}/config/")
-find_package(ZeroMQ 4.0 REQUIRED)
-include_directories("${azmq_SOURCE_DIR}")
-
 add_executable(main ${PROTO_HEADER} ${PROTO_SRC} main.cc)
-target_link_libraries(main recognition ${PROTOBUF_LIBRARY} ${Boost_LIBRARIES} ${ZeroMQ_LIBRARIES})
+target_link_libraries(main faceextract pthread ${PROTOBUF_LIBRARY} ${Boost_LIBRARIES} ${LibRDKafka_LIBRARIES})

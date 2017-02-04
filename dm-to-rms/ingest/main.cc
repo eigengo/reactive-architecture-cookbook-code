@@ -484,22 +484,21 @@ int main (int argc, char **argv) {
 
     } else if (mode == "C") {
         auto producer = std::unique_ptr<RdKafka::Producer>(RdKafka::Producer::create(conf, errstr));
-        auto out_topic = std::unique_ptr<RdKafka::Topic>(RdKafka::Topic::create(producer.get(), topic_str, tconf, errstr));
+        const auto out_topic = std::unique_ptr<RdKafka::Topic>(RdKafka::Topic::create(producer.get(), topic_str, tconf, errstr));
         auto consumer = std::unique_ptr<RdKafka::KafkaConsumer>(RdKafka::KafkaConsumer::create(conf, errstr));
+        const std::string key = "key";
         consumer->subscribe(std::vector<std::string>({topic_str}));
         while (run) {
-            consumer->poll(0);
-
-            auto message = std::unique_ptr<RdKafka::Message>(consumer->consume(10));
+            const auto message = std::unique_ptr<RdKafka::Message>(consumer->consume(10));
             std::string in_payload(static_cast<const char *>(message->payload()), static_cast<int>(message->len()));
             std::cout << "Consumed message" << in_payload << std::endl;
 
             std::string out_payload = "foo";
-            RdKafka::ErrorCode resp =
+            const auto resp =
                     producer->produce(out_topic.get(), partition,
                                       RdKafka::Producer::RK_MSG_COPY /* Copy payload */,
                                       const_cast<char *>(out_payload.c_str()), out_payload.size(),
-                                      nullptr, nullptr);
+                                      &key, nullptr);
             if (resp != RdKafka::ERR_NO_ERROR) {
                 std::cerr << "% Produce failed: " << RdKafka::err2str(resp) << std::endl;
             } else {
