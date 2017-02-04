@@ -23,5 +23,5 @@ message(STATUS "************ ${PROTO_HEADER} ${PROTO_SRC}")
 set(SRCS main-test.cc)
 
 add_executable(main-test ${SRCS} ${PROTO_HEADER} ${PROTO_SRC})
-target_link_libraries(main-test rapidcheck gtest gmock_main ${PROTOBUF_LIBRARY} recognition)
+target_link_libraries(main-test rapidcheck gtest gmock_main ${PROTOBUF_LIBRARY} faceextractor)
 add_test(all main-test)

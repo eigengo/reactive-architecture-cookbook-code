@@ -11,5 +11,5 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 set(SRCS faceextractor-test.cc)
 
 add_executable(recognition-test ${SRCS})
-target_link_libraries(recognition-test gtest gmock_main ${OpenCV_LIBS} recognition)
+target_link_libraries(recognition-test gtest gmock_main ${OpenCV_LIBS} faceextractor)
 add_test(all recognition-test)

@@ -1,14 +1,14 @@
 #include <gtest/gtest.h>
 #include <opencv/cv.hpp>
-#include "recogniser.h"
+#include "faceextractor.h"
 
 using namespace com::reactivearchitecturecookbook;
 
 class faceextractor_test : public testing::Test {
 protected:
-    faceextractor faceextractor;
+    face_exctactor fe;
 };
 
 TEST_F(faceextractor_test, recognise_trivial) {
-    faceextractor.extract(cv::Mat());
+    fe.extract(cv::Mat());
 }

@@ -33,4 +33,4 @@ add_subdirectory(faceextract-test)
 add_subdirectory(test)
 
 add_executable(main ${PROTO_HEADER} ${PROTO_SRC} main.cc)
-target_link_libraries(main faceextract pthread ${PROTOBUF_LIBRARY} ${Boost_LIBRARIES} ${LibRDKafka_LIBRARIES})
+target_link_libraries(main faceextractor pthread ${PROTOBUF_LIBRARY} ${Boost_LIBRARIES} ${LibRDKafka_LIBRARIES})

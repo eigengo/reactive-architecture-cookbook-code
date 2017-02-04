@@ -1,8 +1,8 @@
 #include <string>
-#include "recogniser.h"
+#include "faceextractor.h"
 
 using namespace com::reactivearchitecturecookbook;
 
-cv::Mat recogniser::recognise(const cv::Mat &&image) {
-    return image;
+std::vector<cv::Mat> face_exctactor::extract(const cv::Mat &&image) {
+    return std::vector<cv::Mat>();
 }

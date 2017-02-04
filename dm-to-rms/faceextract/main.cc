@@ -5,7 +5,7 @@
 #include <experimental/optional>
 #include <boost/asio.hpp>
 #include <boost/program_options.hpp>
-#include "recogniser.h"
+#include "faceextractor.h"
 #include <librdkafka/rdkafkacpp.h>
 #include <envelope.pb.h>
 #include <faceextract-v1m0.pb.h>
