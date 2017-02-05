@@ -63,10 +63,12 @@ RUN git clone https://github.com/google/protobuf && \
 RUN git clone https://github.com/edenhill/librdkafka && \
     cd librdkafka && \
     ./configure --prefix=/usr && \
-    make -j8 install && \
+    make -j8 && \
+    make install && \
     cd / && \
     rm -rf librdkafka && \
-    ln -s /usr/lib/librdkafka.so /usr/lib/x86_64-linux-gnu/librdkafka.so
+    ln -s /usr/lib/librdkafka.so /usr/lib/x86_64-linux-gnu/librdkafka.so && \
+    ln -s /usr/lib/librdkafka++.so /usr/lib/x86_64-linux-gnu/librdkafka++.so
 
 RUN curl -L -o opencv3.zip https://github.com/opencv/opencv/archive/3.2.0.zip && \
     unzip opencv3.zip && \

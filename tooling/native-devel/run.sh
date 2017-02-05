@@ -5,5 +5,5 @@ mkdir -p target
 cd target
 rm -rf *
 cmake ..
-cmake --build .
+make -j8
 ctest -v
