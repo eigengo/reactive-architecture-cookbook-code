@@ -18,15 +18,16 @@ using namespace com::reactivearchitecturecookbook;
 
 namespace asio = boost::asio;
 namespace po = boost::program_options;
+namespace fe = faceextract::v1m0;
 
 template<typename T, typename U, typename Handler>
-std::vector<Envelope> transform(RdKafka::Message *message, Handler mapper) {
+std::vector<Envelope> handle_sync(const std::unique_ptr<RdKafka::Message> &message, Handler handler) {
     Envelope envelope;
     if (envelope.ParseFromArray(message->payload(), static_cast<int>(message->len()))) {
         if (envelope.payload().Is<T>()) {
             T payload;
             if (envelope.payload().UnpackTo(&payload)) {
-                std::vector<U> mapped_payloads = mapper(payload);
+                std::vector<U> mapped_payloads = handler(envelope, payload);
                 std::vector<Envelope> result(mapped_payloads.size());
                 std::transform(mapped_payloads.begin(), mapped_payloads.end(), result.begin(),
                                [&envelope](const U &mapped_payload) {
@@ -45,6 +46,17 @@ static std::atomic_bool run(true);
 static void sigterm(int) {
     run = false;
 }
+
+class confirm_dr_cb : public RdKafka::DeliveryReportCb {
+private:
+    std::shared_ptr<RdKafka::KafkaConsumer> consumer_;
+public:
+    confirm_dr_cb(std::shared_ptr<RdKafka::KafkaConsumer> consumer) : consumer_(consumer) { };
+
+    void dr_cb(RdKafka::Message &message) override {
+        if (message.err() == RdKafka::ERR_NO_ERROR) consumer_->commitAsync(&message);
+    }
+};
 
 int main(int argc, const char *argv[]) {
     std::vector<std::string> brokers{"localhost"};
@@ -72,10 +84,12 @@ int main(int argc, const char *argv[]) {
     conf->set("metadata.broker.list", boost::algorithm::join(brokers, ","), err_str);
     conf->set("group.id", consumer_group, err_str);
 
+    auto consumer = std::shared_ptr<RdKafka::KafkaConsumer>(RdKafka::KafkaConsumer::create(conf.get(), err_str));
+    confirm_dr_cb dr_cb(consumer);
+    conf->set("dr_cb", &dr_cb, err_str);
     auto producer = std::unique_ptr<RdKafka::Producer>(RdKafka::Producer::create(conf.get(), err_str));
     const auto out_topic = std::unique_ptr<RdKafka::Topic>(
             RdKafka::Topic::create(producer.get(), out_topic_name, tconf.get(), err_str));
-    auto consumer = std::unique_ptr<RdKafka::KafkaConsumer>(RdKafka::KafkaConsumer::create(conf.get(), err_str));
     const std::string key = "key";
     consumer->subscribe(std::vector<std::string>({in_topic_name}));
 
@@ -83,15 +97,11 @@ int main(int argc, const char *argv[]) {
     signal(SIGTERM, sigterm);
 
     while (run) {
-        const auto message = std::unique_ptr<RdKafka::Message>(consumer->consume(10));
+        auto message = std::unique_ptr<RdKafka::Message>(consumer->consume(10));
         if (message->err() != RdKafka::ERR_NO_ERROR) continue;
 
-        const auto out_envelopes = transform<faceextract::v1m0::ExtractFace, faceextract::v1m0::ExtractedFace>(
-                message.get(),
-                [](const auto &extractFace) {
-                    return std::vector<faceextract::v1m0::ExtractedFace>{
-                            faceextract::v1m0::ExtractedFace()};
-                });
+        const auto out_envelopes = handle_sync<fe::ExtractFace, fe::ExtractedFace>(
+                message, [](const auto &, const auto &) { return std::vector<fe::ExtractedFace>{fe::ExtractedFace()}; });
         for (const auto &out_envelope : out_envelopes) {
             const auto out_payload = out_envelope.SerializeAsString();
             const auto resp = producer->produce(out_topic.get(), partition,
@@ -110,5 +120,5 @@ int main(int argc, const char *argv[]) {
     }
 
     consumer->close();
-    producer->flush(0);
+    producer->flush(1000);
 }
