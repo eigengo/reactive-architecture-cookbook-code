@@ -3,7 +3,7 @@
 .conductr
 
 .DS_Store
-
+.*
 
 # We don't want generated stuff
 generated
