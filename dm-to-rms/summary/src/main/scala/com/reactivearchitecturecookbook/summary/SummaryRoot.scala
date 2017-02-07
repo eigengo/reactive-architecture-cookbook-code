@@ -1,6 +1,6 @@
 package com.reactivearchitecturecookbook.summary
 
-import akka.actor.{Actor, ActorRef, OneForOneStrategy, Props, SupervisorStrategy}
+import akka.actor.{Actor, ActorRef, Kill, OneForOneStrategy, Props, SupervisorStrategy, Terminated}
 import cakesolutions.kafka.akka.KafkaConsumerActor.Subscribe
 import cakesolutions.kafka.akka.{ConsumerRecords, KafkaConsumerActor, Offsets}
 import cakesolutions.kafka.{KafkaConsumer, KafkaDeserializer, KafkaProducer, KafkaSerializer}
@@ -68,6 +68,7 @@ class SummaryRoot(consumerConf: KafkaConsumer.Conf[String, Envelope],
     else {
       val summary = context.actorOf(Summary.props, name = transactionId)
       summaries = summaries + ((transactionId, (summary, startingOffsets)))
+      context.watch(summary)
       summary
     }
   }
@@ -82,9 +83,10 @@ class SummaryRoot(consumerConf: KafkaConsumer.Conf[String, Envelope],
       offsets = consumerRecords.offsets
       kafkaConsumerActor ! KafkaConsumerActor.Confirm(consumerRecords.offsets)
     case Summary.Completed(state) ⇒
-      summaries = summaries - sender().path.name
-      context.stop(sender())
       context.system.log.info(s"Completed with state $state.")
+      context.stop(sender())
+    case Terminated(subject) ⇒
+      summaries = summaries - subject.path.name
   }
 
 }

@@ -20,6 +20,8 @@ class Summary extends Actor {
   override def receive: Receive = {
     case Envelope(correlationId, Some(payload)) ⇒
       if (payload.is[ExtractedFace]) counter += 1
-      if (counter == 2) context.parent ! Completed(counter)
+      if (counter == 2) {
+        context.parent ! Completed(counter)
+      }
   }
 }
