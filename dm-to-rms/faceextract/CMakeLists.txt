@@ -18,9 +18,18 @@ download_project(PROJ       googletest
         ${UPDATE_DISCONNECTED_IF_AVAILABLE}
         )
 
+download_project(PROJ       easyloggingpp
+        GIT_REPOSITORY      https://github.com/muflihun/easyloggingpp
+        GIT_TAG             master
+        ${UPDATE_DISCONNECTED_IF_AVAILABLE}
+        )
+
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
 include_directories("${gtest_SOURCE_DIR}/include" "${gmock_SOURCE_DIR}/include")
+
+set(easyloggingpp_SRC ${easyloggingpp_SOURCE_DIR}/src/easylogging++.cc)
+include_directories(${easyloggingpp_SOURCE_DIR}/src)
 
 file(GLOB_RECURSE PROTOS ${CMAKE_CURRENT_SOURCE_DIR}/../protocol/*.proto)
 protobuf_generate_cpp(PROTO_SRC PROTO_HEADER ${PROTOS})
@@ -32,5 +41,5 @@ add_subdirectory(faceextract)
 add_subdirectory(faceextract-test)
 add_subdirectory(test)
 
-add_executable(main ${PROTO_HEADER} ${PROTO_SRC} main.cc)
+add_executable(main ${PROTO_HEADER} ${PROTO_SRC} ${easyloggingpp_SRC} main.cc)
 target_link_libraries(main faceextractor pthread ${PROTOBUF_LIBRARY} ${Boost_LIBRARIES} ${LibRDKafka_LIBRARIES})

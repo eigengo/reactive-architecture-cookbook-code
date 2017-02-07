@@ -2,6 +2,7 @@
 #include <sstream>
 #include <iostream>
 #include <iomanip>
+#include <random>
 #include <experimental/optional>
 #include <boost/asio.hpp>
 #include <boost/program_options.hpp>
@@ -13,6 +14,9 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <google/protobuf/util/json_util.h>
 #include <boost/algorithm/string/join.hpp>
+#include <easylogging++.h>
+
+#define DEMO
 
 using namespace com::reactivearchitecturecookbook;
 
@@ -54,9 +58,14 @@ public:
     confirm_dr_cb(std::shared_ptr<RdKafka::KafkaConsumer> consumer) : consumer_(consumer) { };
 
     void dr_cb(RdKafka::Message &message) override {
-        if (message.err() == RdKafka::ERR_NO_ERROR) consumer_->commitAsync(&message);
+        if (message.err() == RdKafka::ERR_NO_ERROR) {
+            LOG(INFO) << "Committed offsets for " << message.key() << " on " << message.topic_name();
+            consumer_->commitAsync(&message);
+        }
     }
 };
+
+INITIALIZE_EASYLOGGINGPP
 
 int main(int argc, const char *argv[]) {
     std::vector<std::string> brokers{"localhost"};
@@ -90,7 +99,6 @@ int main(int argc, const char *argv[]) {
     auto producer = std::unique_ptr<RdKafka::Producer>(RdKafka::Producer::create(conf.get(), err_str));
     const auto out_topic = std::unique_ptr<RdKafka::Topic>(
             RdKafka::Topic::create(producer.get(), out_topic_name, tconf.get(), err_str));
-    const std::string key = "key";
     consumer->subscribe(std::vector<std::string>({in_topic_name}));
 
     signal(SIGINT, sigterm);
@@ -98,21 +106,35 @@ int main(int argc, const char *argv[]) {
 
     while (run) {
         auto message = std::unique_ptr<RdKafka::Message>(consumer->consume(10));
+#ifdef DEMO
+        boost::uuids::random_generator uuid_gen;
+        std::random_device rd;
+        std::mt19937 key_gen(rd());
+        std::uniform_int_distribution<> dis(0, 20);
+        const std::string k = std::to_string(dis(key_gen));
+        const auto key = &k;
+        Envelope envelope;
+        envelope.set_correlation_id(boost::uuids::to_string(uuid_gen()));
+        fe::ExtractedFace ef;
+        envelope.mutable_payload()->PackFrom(ef);
+        const auto out_envelopes = std::vector<Envelope>{ envelope };
+#else
         if (message->err() != RdKafka::ERR_NO_ERROR) continue;
-
+        const auto &key = message->key();
         const auto out_envelopes = handle_sync<fe::ExtractFace, fe::ExtractedFace>(
                 message, [](const auto &, const auto &) { return std::vector<fe::ExtractedFace>{fe::ExtractedFace()}; });
+#endif
+
         for (const auto &out_envelope : out_envelopes) {
             const auto out_payload = out_envelope.SerializeAsString();
             const auto resp = producer->produce(out_topic.get(), partition,
                                                 RdKafka::Producer::RK_MSG_COPY,
                                                 const_cast<char *>(out_payload.c_str()), out_payload.size(),
-                                                &key, nullptr);
+                                                key, nullptr);
             if (resp != RdKafka::ERR_NO_ERROR) {
-                std::cerr << "% Produce failed: " << RdKafka::err2str(resp) << std::endl;
+                LOG(ERROR) << "Produce failed: " << RdKafka::err2str(resp);
             } else {
-                consumer->commitSync(message.get());
-                std::cerr << "% Produced message (" << out_payload.size() << " bytes)" << std::endl;
+                LOG(INFO) << "Produced message (" << out_payload.size() << " bytes)";
             }
         }
 
