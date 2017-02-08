@@ -2,11 +2,13 @@
 
 BASEDIR="$(cd "$(dirname "$0")" && pwd)"
 
-# cd $BASEDIR/native-devel
-# docker build -t oreilly/rac-native-devel .
-#
-# cd $BASEDIR/native-runtime
-# docker build -t oreilly/rac-native-runtime .
+cd $BASEDIR/native-devel
+docker build -t oreilly/rac-native-devel .
+
+cd $BASEDIR/native-runtime
+docker build -t oreilly/rac-native-runtime .
+
+exit 0
 
 BASEDIR_BIN=$BASEDIR/.bin
 DOCKER_SQUASH=$BASEDIR_BIN/docker-squash
