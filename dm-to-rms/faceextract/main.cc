@@ -110,7 +110,7 @@ int main(int argc, const char *argv[]) {
         boost::uuids::random_generator uuid_gen;
         std::random_device rd;
         std::mt19937 key_gen(rd());
-        std::uniform_int_distribution<> dis(0, 2000);
+        std::uniform_int_distribution<> dis(0, 5);
         const std::string k = std::to_string(dis(key_gen));
         const auto key = &k;
         Envelope envelope;

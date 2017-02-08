@@ -10,6 +10,8 @@ import com.typesafe.config.Config
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.serialization.{StringDeserializer, StringSerializer}
 
+import scala.concurrent.Future
+
 object SummariesActor {
   private val extractor = ConsumerRecords.extractor[String, Envelope]
 
@@ -47,39 +49,38 @@ class SummariesActor(consumerConf: KafkaConsumer.Conf[String, Envelope],
     case _ ⇒ SupervisorStrategy.Restart
   }
 
-  def assignedListener(partitions: List[TopicPartition]): Offsets = {
+  private def assignedListener(partitions: List[TopicPartition]): Offsets = {
     redisClientPool.withClient { client ⇒
       val offsets = partitions.map { p ⇒ (p, 0L) }
       Offsets(offsets.toMap)
     }
   }
 
-  def revokedListener(partitions: List[TopicPartition]): Unit = {
+  private def revokedListener(partitions: List[TopicPartition]): Unit = {
     // noop
+  }
+
+  private def peristOffsets(offsets: Offsets): Unit = {
+    import context.dispatcher
+    if (!offsets.isEmpty) Future {
+      redisClientPool.withClient { client ⇒
+        offsets.offsetsMap.foreach { case (tp, offset) ⇒ client.hset1(tp.topic(), tp.partition(), offset) }
+        context.system.log.debug(s"Persisted latest offsets $offsets")
+      }
+    }
   }
 
   @scala.throws[Exception](classOf[Exception])
   override def preStart(): Unit = {
-    kafkaConsumerActor ! Subscribe.AutoPartitionWithManualOffset(Seq("vision-1"), assignedListener, revokedListener)
+    kafkaConsumerActor ! Subscribe.AutoPartitionWithManualOffset(Seq("vision-1", "vision-internal-1"), assignedListener, revokedListener)
   }
-
-  private var lastOffset: Long = 0
 
   override def receive: Receive = {
     case SummariesActor.extractor(consumerRecords) ⇒
       val (newSummaries, outcomes, offsets) = summaries.withConsumerRecords(consumerRecords.recordsList)
       summaries = newSummaries
-
+      peristOffsets(offsets)
       println(outcomes)
-      println(offsets)
-      offsets.get(new TopicPartition("vision-1", 0)) match {
-        case Some(offset) ⇒
-          if (lastOffset > offset) {
-            println(s"***************! $lastOffset $offset")
-          }
-          lastOffset = offset
-        case None ⇒
-      }
 
       kafkaConsumerActor ! KafkaConsumerActor.Confirm(consumerRecords.offsets)
   }
