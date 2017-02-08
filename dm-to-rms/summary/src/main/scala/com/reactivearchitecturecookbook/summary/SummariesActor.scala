@@ -83,8 +83,6 @@ class SummariesActor(consumerConf: KafkaConsumer.Conf[String, Envelope],
       summaries = newSummaries
       kafkaConsumerActor ! KafkaConsumerActor.Confirm(consumerRecords.offsets)
 
-      println(outcomes)
-      println(offsets)
       if (outcomes.nonEmpty) {
         val sent = outcomes.map { case (transactionId, outcome) ⇒
           val out = Envelope()
