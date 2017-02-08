@@ -8,20 +8,17 @@ import org.apache.kafka.common.TopicPartition
 object Summaries {
   val empty = Summaries(Map.empty)
 
-  case class TopicParittionOffset(topic: String, partition: Int, offset: Long)
-
   object InternalSummary {
     def apply(summary: Summary, topic: String, partition: Int, offset: Long): InternalSummary = {
-      InternalSummary(summary, List(TopicParittionOffset(topic, partition, offset)))
+      InternalSummary(summary, Map(new TopicPartition(topic, partition) → (offset, offset)))
     }
   }
 
-  case class InternalSummary private(summary: Summary, topicParittionOffsets: List[TopicParittionOffset]) {
+  case class InternalSummary private(summary: Summary, topicParittionOffsets: Map[TopicPartition, (Long, Long)]) {
     def next(envelope: Envelope, topic: String, partition: Int, offset: Long): InternalSummary = {
-      val tpes = if (!topicParittionOffsets.exists(tpe ⇒ tpe.partition == partition && tpe.topic == topic)) {
-        TopicParittionOffset(topic, partition, offset) :: topicParittionOffsets
-      } else topicParittionOffsets
-      copy(summary = summary.next(envelope), topicParittionOffsets = topicParittionOffsets)
+      val tp = new TopicPartition(topic, partition)
+      val (first, _) = topicParittionOffsets(tp)
+      copy(summary = summary.next(envelope), topicParittionOffsets = topicParittionOffsets + (tp → (first, offset)))
     }
   }
 
@@ -32,20 +29,26 @@ case class Summaries private(summaries: Map[String, Summaries.InternalSummary]) 
   import Summaries._
 
   private def completeOffsets(summaries: Map[String, Summaries.InternalSummary]): Offsets = {
-    val (cs, ic) = summaries.values.partition(_.summary.isComplete)
-    val incompleteTpos = ic.flatMap(_.topicParittionOffsets)
+    def computeOffsets(summaries: Iterable[InternalSummary]): Offsets = {
+      val topicPartitions = summaries.flatMap(_.topicParittionOffsets.keys)
+      val topicPartitionsOffsetRanges = topicPartitions.map { topicPartition ⇒
+        (topicPartition, summaries.flatMap { summary ⇒ summary.topicParittionOffsets.get(topicPartition).map { case (start, end) ⇒ (summary.summary.isComplete, start, end) } })
+      }
 
-    val complete = cs
-        .flatMap(_.topicParittionOffsets)
-        .groupBy(tpo ⇒ new TopicPartition(tpo.topic, tpo.partition))
-        .mapValues(_.map(_.offset).min)
-        .filterNot { case (tp, offset) ⇒ incompleteTpos.exists(x ⇒ x.topic == tp.topic() && x.partition == tp.partition() && x.offset > offset) }
-//
-//    if (complete.get(new TopicPartition("vision-1", 0)).contains(3503)) {
-//      println("sfsfsdfs")
-//    }
+      val x= topicPartitionsOffsetRanges.flatMap { case (tp, offsetRanges) ⇒
+        val sortedOffsetRanges = offsetRanges.toList.sortWith { case ((_, s1, _), (_, s2, _)) ⇒ s1 < s2 }
+        //noinspection VariablePatternShadow
+        val (minIncomplete, maxComplete) = sortedOffsetRanges.foldLeft((Long.MaxValue, 0L)) { case (r@(minIncomplete, maxComplete), (c, s, e)) ⇒
+            if (c && maxComplete == 0) (minIncomplete, s)
+            else if (!c && minIncomplete == Long.MaxValue) (e, maxComplete)
+            else r
+        }
+        if (maxComplete <= minIncomplete) Some(tp, maxComplete) else None
+      }
+      Offsets(x.toMap)
+    }
 
-    Offsets(complete)
+    computeOffsets(summaries.values)
   }
 
   private def completeSummaries(summaries: Map[String, Summaries.InternalSummary]): Map[String, Outcome] = {

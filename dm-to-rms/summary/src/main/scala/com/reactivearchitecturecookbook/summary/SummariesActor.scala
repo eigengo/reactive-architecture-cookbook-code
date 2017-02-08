@@ -71,6 +71,7 @@ class SummariesActor(consumerConf: KafkaConsumer.Conf[String, Envelope],
       summaries = newSummaries
 
       println(outcomes)
+      println(offsets)
       offsets.get(new TopicPartition("vision-1", 0)) match {
         case Some(offset) ⇒
           if (lastOffset > offset) {
