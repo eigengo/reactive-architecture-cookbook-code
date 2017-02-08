@@ -1,6 +1,6 @@
 package com.reactivearchitecturecookbook.summary
 
-import akka.actor.{Actor, ActorRef, Kill, OneForOneStrategy, Props, SupervisorStrategy, Terminated}
+import akka.actor.{Actor, OneForOneStrategy, Props, SupervisorStrategy}
 import cakesolutions.kafka.akka.KafkaConsumerActor.Subscribe
 import cakesolutions.kafka.akka.{ConsumerRecords, KafkaConsumerActor, Offsets}
 import cakesolutions.kafka.{KafkaConsumer, KafkaDeserializer, KafkaProducer, KafkaSerializer}
@@ -10,7 +10,7 @@ import com.typesafe.config.Config
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.serialization.{StringDeserializer, StringSerializer}
 
-object SummaryRoot {
+object SummariesActor {
   private val extractor = ConsumerRecords.extractor[String, Envelope]
 
   def props(config: Config): Props = {
@@ -27,22 +27,22 @@ object SummaryRoot {
     )
     val redisClientPool = new RedisClientPool(config.getString("redis.host"), config.getInt("redis.port"))
 
-    Props(classOf[SummaryRoot], consumerConf, consumerActorConf, producerConf, redisClientPool)
+    Props(classOf[SummariesActor], consumerConf, consumerActorConf, producerConf, redisClientPool)
   }
 }
 
-class SummaryRoot(consumerConf: KafkaConsumer.Conf[String, Envelope],
-                  consumerActorConf: KafkaConsumerActor.Conf,
-                  producerConf: KafkaProducer.Conf[String, Envelope],
-                  redisClientPool: RedisClientPool) extends Actor {
+class SummariesActor(consumerConf: KafkaConsumer.Conf[String, Envelope],
+                     consumerActorConf: KafkaConsumerActor.Conf,
+                     producerConf: KafkaProducer.Conf[String, Envelope],
+                     redisClientPool: RedisClientPool) extends Actor {
 
   private[this] val kafkaConsumerActor = context.actorOf(
     KafkaConsumerActor.props(consumerConf = consumerConf, actorConf = consumerActorConf, downstreamActor = self)
   )
-  private[this] var summaries: Map[String, (ActorRef, Offsets)] = Map.empty
-  private[this] var offsets: Offsets = Offsets(Map.empty)
+  private[this] var summaries: Summaries = Summaries.empty
 
   import scala.concurrent.duration._
+
   override def supervisorStrategy: SupervisorStrategy = OneForOneStrategy(maxNrOfRetries = 3, withinTimeRange = 3.seconds) {
     case _ ⇒ SupervisorStrategy.Restart
   }
@@ -63,30 +63,24 @@ class SummaryRoot(consumerConf: KafkaConsumer.Conf[String, Envelope],
     kafkaConsumerActor ! Subscribe.AutoPartitionWithManualOffset(Seq("vision-1"), assignedListener, revokedListener)
   }
 
-  private def summaryActorFor(transactionId: String, startingOffsets: Offsets): ActorRef = {
-    if (summaries.contains(transactionId)) summaries(transactionId)._1
-    else {
-      val summary = context.actorOf(Summary.props, name = transactionId)
-      summaries = summaries + ((transactionId, (summary, startingOffsets)))
-      context.watch(summary)
-      summary
-    }
-  }
+  private var lastOffset: Long = 0
 
   override def receive: Receive = {
-    case SummaryRoot.extractor(consumerRecords) ⇒
-      consumerRecords.pairs.foreach {
-        case (Some(transactionId), envelope) ⇒ summaryActorFor(transactionId, offsets) ! envelope
-        case _ ⇒ context.system.log.error("Received Envelope without a valid transactionId key.")
+    case SummariesActor.extractor(consumerRecords) ⇒
+      val (newSummaries, outcomes, offsets) = summaries.withConsumerRecords(consumerRecords.recordsList)
+      summaries = newSummaries
+
+      println(outcomes)
+      offsets.get(new TopicPartition("vision-1", 0)) match {
+        case Some(offset) ⇒
+          if (lastOffset > offset) {
+            println(s"***************! $lastOffset $offset")
+          }
+          lastOffset = offset
+        case None ⇒
       }
 
-      offsets = consumerRecords.offsets
       kafkaConsumerActor ! KafkaConsumerActor.Confirm(consumerRecords.offsets)
-    case Summary.Completed(state) ⇒
-      context.system.log.info(s"Completed with state $state.")
-      context.stop(sender())
-    case Terminated(subject) ⇒
-      summaries = summaries - subject.path.name
   }
 
 }

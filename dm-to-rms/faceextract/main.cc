@@ -105,7 +105,7 @@ int main(int argc, const char *argv[]) {
     signal(SIGTERM, sigterm);
 
     while (run) {
-        auto message = std::unique_ptr<RdKafka::Message>(consumer->consume(10));
+        auto message = std::unique_ptr<RdKafka::Message>(consumer->consume(1000));
 #ifdef DEMO
         boost::uuids::random_generator uuid_gen;
         std::random_device rd;
