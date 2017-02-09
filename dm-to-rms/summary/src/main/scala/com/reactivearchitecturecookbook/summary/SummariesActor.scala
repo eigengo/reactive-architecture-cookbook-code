@@ -51,6 +51,14 @@ class SummariesActor(consumerConf: KafkaConsumer.Conf[String, Envelope],
     // noop
   }
 
+  private def assignedListener(partitions: List[TopicPartition]): Offsets = {
+    redisClientPool.withClient { client ⇒
+      import com.redis.serialization.Parse.Implicits._
+      val offsetsMap = partitions.map { tp ⇒ (tp, client.hget[Long](tp.topic(), tp.partition()).getOrElse(0L)) }.toMap
+      Offsets(offsetsMap)
+    }
+  }
+
   private def persistOffsets(offsets: Offsets): Unit = {
     import context.dispatcher
     if (!offsets.isEmpty) Future {
@@ -65,12 +73,6 @@ class SummariesActor(consumerConf: KafkaConsumer.Conf[String, Envelope],
     case _ ⇒ SupervisorStrategy.Restart
   }
 
-  private def assignedListener(partitions: List[TopicPartition]): Offsets = {
-    redisClientPool.withClient { client ⇒
-      val offsets = partitions.map { p ⇒ (p, 0L) }
-      Offsets(offsets.toMap)
-    }
-  }
 
   @scala.throws[Exception](classOf[Exception])
   override def preStart(): Unit = {
