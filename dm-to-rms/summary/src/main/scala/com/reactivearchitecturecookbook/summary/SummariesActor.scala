@@ -1,6 +1,6 @@
 package com.reactivearchitecturecookbook.summary
 
-import akka.actor.{Actor, OneForOneStrategy, Props, SupervisorStrategy}
+import akka.actor.{Actor, OneForOneStrategy, Props, SupervisorStrategy, Kill}
 import cakesolutions.kafka._
 import cakesolutions.kafka.akka.KafkaConsumerActor.Subscribe
 import cakesolutions.kafka.akka.{ConsumerRecords, KafkaConsumerActor, Offsets}
@@ -47,6 +47,20 @@ class SummariesActor(consumerConf: KafkaConsumer.Conf[String, Envelope],
 
   import scala.concurrent.duration._
 
+  private def revokedListener(partitions: List[TopicPartition]): Unit = {
+    // noop
+  }
+
+  private def persistOffsets(offsets: Offsets): Unit = {
+    import context.dispatcher
+    if (!offsets.isEmpty) Future {
+      redisClientPool.withClient { client ⇒
+        offsets.offsetsMap.foreach { case (tp, offset) ⇒ client.hset1(tp.topic(), tp.partition(), offset) }
+        context.system.log.debug("Persisted latest offsets {}.", offsets)
+      }
+    }
+  }
+
   override def supervisorStrategy: SupervisorStrategy = OneForOneStrategy(maxNrOfRetries = 3, withinTimeRange = 3.seconds) {
     case _ ⇒ SupervisorStrategy.Restart
   }
@@ -58,28 +72,18 @@ class SummariesActor(consumerConf: KafkaConsumer.Conf[String, Envelope],
     }
   }
 
-  private def revokedListener(partitions: List[TopicPartition]): Unit = {
-    // noop
-  }
-
-  private def persistOffsets(offsets: Offsets): Unit = {
-    import context.dispatcher
-    if (!offsets.isEmpty) Future {
-      redisClientPool.withClient { client ⇒
-        offsets.offsetsMap.foreach { case (tp, offset) ⇒ client.hset1(tp.topic(), tp.partition(), offset) }
-        context.system.log.debug(s"Persisted latest offsets $offsets")
-      }
-    }
-  }
-
   @scala.throws[Exception](classOf[Exception])
   override def preStart(): Unit = {
-    kafkaConsumerActor ! Subscribe.AutoPartitionWithManualOffset(Seq("vision-1", "vision-internal-1"), assignedListener, revokedListener)
+    kafkaConsumerActor ! Subscribe.AutoPartitionWithManualOffset(
+      Seq("vision-1", "vision-internal-1"),
+      assignedListener,
+      revokedListener
+    )
   }
 
   override def receive: Receive = {
     case SummariesActor.extractor(consumerRecords) ⇒
-      val (newSummaries, outcomes, offsets) = summaries.withConsumerRecords(consumerRecords.recordsList)
+      val (newSummaries, outcomes, offsets) = summaries.appending(consumerRecords.recordsList)
       summaries = newSummaries
       kafkaConsumerActor ! KafkaConsumerActor.Confirm(consumerRecords.offsets)
 
@@ -90,11 +94,12 @@ class SummariesActor(consumerConf: KafkaConsumer.Conf[String, Envelope],
         }
         import context.dispatcher
         Future.sequence(sent).onComplete {
-          case Success(recordMetadatas) ⇒
-            context.system.log.info(s"Successfully sent $recordMetadatas for $offsets")
+          case Success(recordMetadata) ⇒
+            context.system.log.info("Successfully sent {} for {}.", recordMetadata, offsets)
             persistOffsets(offsets)
           case Failure(ex) ⇒
-            context.system.log.error(s"Did not send outcomes for $offsets because of $ex")
+            context.system.log.error(ex, "Could not send outcomes for {}.", offsets)
+            self ! Kill
         }
       }
 
