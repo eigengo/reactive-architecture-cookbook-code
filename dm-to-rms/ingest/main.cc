@@ -20,7 +20,7 @@ using namespace com::reactivearchitecturecookbook;
 namespace in = ingest::v1m0;
 namespace asio = boost::asio;
 namespace po = boost::program_options;
-namespace ng = nghttp2::asio_http2;
+namespace ngs = nghttp2::asio_http2::server;
 namespace bs = boost::system;
 
 INITIALIZE_EASYLOGGINGPP
@@ -44,7 +44,7 @@ int main(int argc, const char *argv[]) {
     po::store(po::command_line_parser(argc, argv).options(description).run(), vm);
     po::notify(vm);
 
-    ng::server::http2 server;
+    ngs::http2 server;
     const int32_t partition = RdKafka::Topic::PARTITION_UA;
     auto conf = std::unique_ptr<RdKafka::Conf>(RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL));
     auto tconf = std::unique_ptr<RdKafka::Conf>(RdKafka::Conf::create(RdKafka::Conf::CONF_TOPIC));
@@ -55,7 +55,7 @@ int main(int argc, const char *argv[]) {
     const auto out_topic = std::unique_ptr<RdKafka::Topic>(
             RdKafka::Topic::create(producer.get(), out_topic_name, tconf.get(), err_str));
 
-    server.handle("/", [&](const ng::server::request &request, const ng::server::response &response) {
+    server.handle("/", [&](const ngs::request &request, const ngs::response &response) {
         request.on_data([&](const uint8_t *data, std::size_t size) {
             Envelope out_envelope;
             in::IngestedImage ingestedImage;
@@ -88,7 +88,7 @@ int main(int argc, const char *argv[]) {
     tls.use_private_key_file("../server.key", boost::asio::ssl::context::pem);
     tls.use_certificate_chain_file("../server.crt");
 
-    ng::server::configure_tls_context_easy(ec, tls);
+    ngs::configure_tls_context_easy(ec, tls);
     if (server.listen_and_serve(ec, tls, "localhost", "8000")) {
         std::cerr << "error: " << ec.message() << std::endl;
     }
