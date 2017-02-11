@@ -24,13 +24,6 @@ download_project(PROJ       googletest
         GIT_REPOSITORY      https://github.com/google/googletest.git
         GIT_TAG             master
         ${UPDATE_DISCONNECTED_IF_AVAILABLE})
-#download_project(PROJ       libkafka-asio
-#        GIT_REPOSITORY      https://github.com/eigengo/libkafka-asio
-#        GIT_TAG             master
-#        ${UPDATE_DISCONNECTED_IF_AVAILABLE})
-#
-#list(APPEND CMAKE_MODULE_PATH ${libkafka-asio_SOURCE_DIR}/cmake/Modules)
-#find_package(Snappy REQUIRED)
 
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
