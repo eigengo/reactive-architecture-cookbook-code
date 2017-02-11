@@ -49,7 +49,5 @@ add_subdirectory(ingest)
 add_subdirectory(ingest-test)
 add_subdirectory(test)
 
-message(STATUS "*********** ${LibRDKafka_LIBRARIES} : ${SNAPPY_INCLUDE_DIR}")
-
-add_executable(main ${PROTO_HEADER} ${PROTO_SRC} main.cc)
+add_executable(main ${PROTO_HEADER} ${easyloggingpp_SRC} ${PROTO_SRC} main.cc)
 target_link_libraries(main ingest pthread ${PROTOBUF_LIBRARY} ${LibRDKafka_LIBRARIES} ${Boost_LIBRARIES} ${NGHTTP2_LIBRARY} ${NGHTTP2_ASIO_LIBRARY} ${OPENSSL_LIBRARIES})

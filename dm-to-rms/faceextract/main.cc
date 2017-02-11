@@ -10,19 +10,21 @@
 #include <librdkafka/rdkafkacpp.h>
 #include <envelope.pb.h>
 #include <faceextract-v1m0.pb.h>
+#include <ingest-v1m0.pb.h>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <google/protobuf/util/json_util.h>
 #include <boost/algorithm/string/join.hpp>
 #include <easylogging++.h>
 
-#define DEMO
+#define DEMOd
 
 using namespace com::reactivearchitecturecookbook;
 
 namespace asio = boost::asio;
 namespace po = boost::program_options;
 namespace fe = faceextract::v1m0;
+namespace in = ingest::v1m0;
 
 template<typename T, typename U, typename Handler>
 std::vector<Envelope> handle_sync(const std::unique_ptr<RdKafka::Message> &message, Handler handler) {
@@ -127,7 +129,7 @@ int main(int argc, const char *argv[]) {
 #else
         if (message->err() != RdKafka::ERR_NO_ERROR) continue;
         const auto &key = message->key();
-        const auto out_envelopes = handle_sync<fe::ExtractFace, fe::ExtractedFace>(
+        const auto out_envelopes = handle_sync<in::IngestedImage, fe::ExtractedFace>(
                 message, [](const auto &, const auto &) { return std::vector<fe::ExtractedFace>{fe::ExtractedFace()}; });
 #endif
         commit_opaque* opaque = new commit_opaque(
