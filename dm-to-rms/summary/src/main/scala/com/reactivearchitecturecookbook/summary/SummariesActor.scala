@@ -1,6 +1,6 @@
 package com.reactivearchitecturecookbook.summary
 
-import akka.actor.{Actor, OneForOneStrategy, Props, SupervisorStrategy, Kill}
+import akka.actor.{Actor, Kill, OneForOneStrategy, Props, SupervisorStrategy}
 import cakesolutions.kafka._
 import cakesolutions.kafka.akka.KafkaConsumerActor.Subscribe
 import cakesolutions.kafka.akka.{ConsumerRecords, KafkaConsumerActor, Offsets}
@@ -11,7 +11,7 @@ import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.serialization.{StringDeserializer, StringSerializer}
 
 import scala.concurrent.Future
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 object SummariesActor {
   private val extractor = ConsumerRecords.extractor[String, Envelope]
@@ -44,6 +44,7 @@ class SummariesActor(consumerConf: KafkaConsumer.Conf[String, Envelope],
   )
   private[this] val kafkaProducer = KafkaProducer(producerConf)
   private[this] var summaries: Summaries = Summaries.empty
+  private[this] var lastFailedOffsetWrite: Long = 0
 
   import scala.concurrent.duration._
 
@@ -62,9 +63,15 @@ class SummariesActor(consumerConf: KafkaConsumer.Conf[String, Envelope],
   private def persistOffsets(offsets: Offsets): Unit = {
     import context.dispatcher
     if (!offsets.isEmpty) Future {
-      redisClientPool.withClient { client ⇒
-        offsets.offsetsMap.foreach { case (tp, offset) ⇒ client.hset1(tp.topic(), tp.partition(), offset) }
-        context.system.log.debug("Persisted latest offsets {}.", offsets)
+      try {
+        redisClientPool.withClient { client ⇒
+          offsets.offsetsMap.foreach { case (tp, offset) ⇒ client.hset1(tp.topic(), tp.partition(), offset) }
+          context.system.log.debug("Persisted latest offsets {}.", offsets)
+        }
+      } catch {
+        case _: Throwable ⇒
+          if (System.currentTimeMillis() - lastFailedOffsetWrite < (1000L * 60L)) self ! Kill
+          lastFailedOffsetWrite = System.currentTimeMillis()
       }
     }
   }
