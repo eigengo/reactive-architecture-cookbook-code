@@ -25,6 +25,15 @@ download_project(PROJ       googletest
         GIT_TAG             master
         ${UPDATE_DISCONNECTED_IF_AVAILABLE})
 
+download_project(PROJ       easyloggingpp
+        GIT_REPOSITORY      https://github.com/muflihun/easyloggingpp
+        GIT_TAG             master
+        ${UPDATE_DISCONNECTED_IF_AVAILABLE}
+        )
+
+set(easyloggingpp_SRC ${easyloggingpp_SOURCE_DIR}/src/easylogging++.cc)
+include_directories(${easyloggingpp_SOURCE_DIR}/src)
+
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
 include_directories("${gtest_SOURCE_DIR}/include" "${gmock_SOURCE_DIR}/include" "${libkafka-asio_SOURCE_DIR}/lib")
