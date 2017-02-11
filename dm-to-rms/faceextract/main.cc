@@ -66,7 +66,7 @@ public:
         auto ctr = std::get<0>(*co);
         if (std::atomic_fetch_sub(ctr.get(), 1L) == 1L) {
             auto tp = std::get<1>(*co);
-            LOG(INFO) << "Committed offset " << tp->offset() << " for " << message.key() << " on " << message.topic_name();
+            LOG(INFO) << "Committed offset " << tp->offset();
             if (message.err() == RdKafka::ERR_NO_ERROR) consumer_->commitAsync(std::vector<RdKafka::TopicPartition *>{tp.get()});
             delete co;
         }
