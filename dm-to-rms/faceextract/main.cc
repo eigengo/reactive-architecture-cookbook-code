@@ -51,6 +51,8 @@ static void sigterm(int) {
     run = false;
 }
 
+using commit_opaque = std::tuple<std::shared_ptr<std::atomic_long>, std::shared_ptr<RdKafka::TopicPartition>>;
+
 class commit_dr_cb : public RdKafka::DeliveryReportCb {
 private:
     std::shared_ptr<RdKafka::KafkaConsumer> consumer_;
@@ -58,13 +60,13 @@ public:
     commit_dr_cb(std::shared_ptr<RdKafka::KafkaConsumer> consumer) : consumer_(consumer) { };
 
     void dr_cb(RdKafka::Message &message) override {
-        if (message.err() != RdKafka::ERR_NO_ERROR) return;
-
-        auto *tp = static_cast<RdKafka::TopicPartition *>(message.msg_opaque());
-        if (tp) {
+        commit_opaque *co = static_cast<commit_opaque *>(message.msg_opaque());
+        auto ctr = std::get<0>(*co);
+        if (std::atomic_fetch_sub(ctr.get(), 1L) == 1L) {
+            auto tp = std::get<1>(*co);
             LOG(INFO) << "Committed offset " << tp->offset() << " for " << message.key() << " on " << message.topic_name();
-            consumer_->commitAsync(std::vector<RdKafka::TopicPartition *>{tp});
-            delete tp;
+            if (message.err() == RdKafka::ERR_NO_ERROR) consumer_->commitAsync(std::vector<RdKafka::TopicPartition *>{tp.get()});
+            delete co;
         }
     }
 };
@@ -128,20 +130,19 @@ int main(int argc, const char *argv[]) {
         const auto out_envelopes = handle_sync<fe::ExtractFace, fe::ExtractedFace>(
                 message, [](const auto &, const auto &) { return std::vector<fe::ExtractedFace>{fe::ExtractedFace()}; });
 #endif
-        for (size_t i = 0; i < out_envelopes.size(); ++i) {
-            const auto &out_envelope = out_envelopes[i];
-            RdKafka::TopicPartition *opaque = nullptr;
-            if (i == out_envelopes.size() - 1) {
-                opaque = RdKafka::TopicPartition::create(message->topic_name(), message->partition(), message->offset());
-            }
+        commit_opaque* opaque = new commit_opaque(
+                std::make_shared<std::atomic_long>(out_envelopes.size()),
+                std::shared_ptr<RdKafka::TopicPartition>(RdKafka::TopicPartition::create(message->topic_name(), message->partition(), message->offset()))
+        );
+        for (const auto &out_envelope : out_envelopes) {
             const auto out_payload = out_envelope.SerializeAsString();
             const auto resp = producer->produce(out_topic.get(), partition,
                                                 RdKafka::Producer::RK_MSG_COPY,
                                                 const_cast<char *>(out_payload.c_str()), out_payload.size(),
                                                 key, opaque);
             if (resp != RdKafka::ERR_NO_ERROR) {
-                delete opaque;
                 LOG(ERROR) << "Produce failed: " << RdKafka::err2str(resp);
+                delete opaque;
             } else {
                 LOG(INFO) << "Produced message (" << out_payload.size() << " bytes) from " << message->offset();
             }
