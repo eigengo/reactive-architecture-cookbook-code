@@ -2,7 +2,7 @@
 #define ALL_PROTOBUF_GEN_H
 
 #include <rapidcheck.h>
-#include <faceextract-v1m0.pb.h>
+#include <ingest-v1m0.pb.h>
 
 using namespace com::reactivearchitecturecookbook;
 
@@ -29,8 +29,8 @@ public:
 namespace rc {
 
     template<>
-    struct Arbitrary<faceextract::v1m0::ExtractFace> {
-        static Gen<faceextract::v1m0::ExtractFace> arbitrary() {
+    struct Arbitrary<ingest::v1m0::IngestedImage> {
+        static Gen<ingest::v1m0::IngestedImage> arbitrary() {
             const std::vector<std::string> contentTypes {"image/png", "image/jpeg", "image/tiff", "image/bmp"};
             const auto contentTypesGen2 = gen::map(gen::container<std::vector<char>>(gen::inRange<char>(32, 127)), [](const auto &chars) {
                 return std::string(chars.begin(), chars.end());
@@ -40,10 +40,10 @@ namespace rc {
             auto x = gen::tuple(contentTypesGen2, gen::arbitrary<std::string>());
 
             return gen::map(x, [](const auto pair) {
-                faceextract::v1m0::ExtractFace extractFace;
-                extractFace.set_mime_type(std::get<0>(pair));
-                extractFace.set_content(std::get<1>(pair));
-                return extractFace;
+                ingest::v1m0::IngestedImage ingested_image;
+                ingested_image.set_mime_type(std::get<0>(pair));
+                ingested_image.set_content(std::get<1>(pair));
+                return ingested_image;
             });
         };
     };

@@ -54,31 +54,32 @@ int main(int argc, const char *argv[]) {
     auto producer = std::unique_ptr<RdKafka::Producer>(RdKafka::Producer::create(conf.get(), err_str));
     const auto out_topic = std::unique_ptr<RdKafka::Topic>(
             RdKafka::Topic::create(producer.get(), out_topic_name, tconf.get(), err_str));
-    LOG(INFO) << err_str ;
 
     server.handle("/", [&](const ng::server::request &request, const ng::server::response &response) {
-        Envelope out_envelope;
-        in::IngestedImage ingestedImage;
-        ingestedImage.set_mime_type("image/png");
-        out_envelope.mutable_payload()->PackFrom(ingestedImage);
-        boost::uuids::random_generator uuid_gen;
-        out_envelope.set_correlation_id(boost::uuids::to_string(uuid_gen()));
+        request.on_data([&](const uint8_t *data, std::size_t size) {
+            Envelope out_envelope;
+            in::IngestedImage ingestedImage;
+            ingestedImage.set_mime_type("image/png");
+            out_envelope.mutable_payload()->PackFrom(ingestedImage);
+            boost::uuids::random_generator uuid_gen;
+            out_envelope.set_correlation_id(boost::uuids::to_string(uuid_gen()));
 
-        const std::string key = "tx";
-        const auto out_payload = out_envelope.SerializeAsString();
-        const auto resp = producer->produce(out_topic.get(), partition,
-                                            RdKafka::Producer::RK_MSG_COPY,
-                                            const_cast<char *>(out_payload.c_str()), out_payload.size(),
-                                            &key, nullptr);
-        if (resp != RdKafka::ERR_NO_ERROR) {
-            response.write_head(500);
-            response.end("{'error':'" + RdKafka::err2str(resp) + "'}");
-            LOG(ERROR) << "Produce failed: " << RdKafka::err2str(resp);
-        } else {
-            response.write_head(200);
-            response.end("{'bytes':" + std::to_string(out_payload.size()) + "}");
-            LOG(INFO) << "Produced message (" << out_payload.size() << " bytes)";
-        }
+            const std::string key = request.uri().path;
+            const auto out_payload = out_envelope.SerializeAsString();
+            const auto resp = producer->produce(out_topic.get(), partition,
+                                                RdKafka::Producer::RK_MSG_COPY,
+                                                const_cast<char *>(out_payload.c_str()), out_payload.size(),
+                                                &key, nullptr);
+            if (resp != RdKafka::ERR_NO_ERROR) {
+                response.write_head(500);
+                response.end("{'error':'" + RdKafka::err2str(resp) + "'}");
+                LOG(ERROR) << "Produce failed: " << RdKafka::err2str(resp);
+            } else {
+                response.write_head(200);
+                response.end("{'bytes':" + std::to_string(out_payload.size()) + "}");
+                LOG(INFO) << "Produced message (" << out_payload.size() << " bytes)";
+            }
+        });
     });
 
     bs::error_code ec;

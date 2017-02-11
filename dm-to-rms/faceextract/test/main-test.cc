@@ -2,16 +2,12 @@
 #include <rapidcheck.h>
 #include <rapidcheck/gtest.h>
 #include "protobuf_gen.h"
-#include <faceextract-v1m0.pb.h>
+#include <ingest-v1m0.pb.h>
 
 using namespace com::reactivearchitecturecookbook;
 
-class main_test : public testing::Test {
-protected:
-};
-
-RC_GTEST_FIXTURE_PROP(main_test, handle_extract_face, (const faceextract::v1m0::ExtractFace &gen)) {
-    faceextract::v1m0::ExtractFace ser;
+RC_GTEST_PROP(main_test, handle_extract_face, (const ingest::v1m0::IngestedImage &gen)) {
+    ingest::v1m0::IngestedImage ser;
     ser.ParseFromString(gen.SerializeAsString());
 
     RC_ASSERT(ser.content() == gen.content());
