@@ -60,7 +60,7 @@ public:
     void dr_cb(RdKafka::Message &message) override {
         if (message.err() != RdKafka::ERR_NO_ERROR) return;
 
-        RdKafka::TopicPartition *tp = static_cast<RdKafka::TopicPartition *>(message.msg_opaque());
+        auto *tp = static_cast<RdKafka::TopicPartition *>(message.msg_opaque());
         if (tp) {
             LOG(INFO) << "Committed offset " << tp->offset() << " for " << message.key() << " on " << message.topic_name();
             consumer_->commitAsync(std::vector<RdKafka::TopicPartition *>{tp});
