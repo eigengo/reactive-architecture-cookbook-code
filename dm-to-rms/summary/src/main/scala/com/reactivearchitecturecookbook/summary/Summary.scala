@@ -17,12 +17,15 @@ object Summary {
     override val isComplete: Boolean = false
 
     override def next(envelope: Envelope): Summary = {
-      if (events.size > 1) Complete(Outcome(2))
-      else copy(events = envelope :: events)
+      if (events.size < 2) copy(events = envelope :: events)
+      else {
+        val out = Envelope(events.flatMap(_.correlationIds), events.head.token, None)
+        Complete(out)
+      }
     }
   }
 
-  case class Complete(outcome: Outcome) extends Summary {
+  case class Complete(outcome: Envelope) extends Summary {
     override val isComplete: Boolean = true
     override def next(envelope: Envelope): Summary = this
   }

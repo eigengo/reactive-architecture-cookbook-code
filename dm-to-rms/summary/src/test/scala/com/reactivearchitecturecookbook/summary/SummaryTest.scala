@@ -7,6 +7,6 @@ class SummaryTest extends FlatSpec with Matchers {
   it should "work" in {
     val i1@Summary.Incomplete(_) = Summary(Envelope())
     val i2@Summary.Incomplete(_) = i1.next(Envelope())
-    val Summary.Complete(Outcome(2)) = i2.next(Envelope())
+    val Summary.Complete(envelope) = i2.next(Envelope())
   }
 }

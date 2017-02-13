@@ -56,13 +56,17 @@ int main(int argc, const char *argv[]) {
             RdKafka::Topic::create(producer.get(), out_topic_name, tconf.get(), err_str));
 
     server.handle("/", [&](const ngs::request &request, const ngs::response &response) {
+        auto authorisation = request.header().find("Authorization");
         request.on_data([&](const uint8_t *data, std::size_t size) {
             Envelope out_envelope;
             in::IngestedImage ingestedImage;
             ingestedImage.set_mime_type("image/png");
+
+            out_envelope.set_token(
+                    "eyJlbmMiOiJBMTI4R0NNIiwiYWxnIjoiUlNBLU9BRVAifQ.aJAcmDd3Do2CTI50zNvPRajU9NIwoiSgjKs9CkCeP_o9YpYxsemo5ij1WVdC3Cy4LEHian5m01kiiwpxV0PQHbCmobbFOnS1YuCs8LEkSLJLsFNZjw4DDRd2sB0UY9wXwEE0SVSx3u05VkV-w-haj5W9byaJ0OkNssFsZzzfzmc.Q0bDPb-LpTzNCqTw.Vo_dsNW1v-lxV7FgD-R9IrCMfTaQ-1ud07yhja0Ng2QtlmmoNVHtWjG_TP1WTIm-QuNnRFakvPwllIVNgtGDm9qecsImTJB2bOa-D1TEJOeNIKQLPChCdGm_cdHKLfn0zgLbH6q61EcaDT-GNmWvy2FkvdvRg_5P1XFueHCxK4s9Z1-sfxCR8T5J6Ej_WftaLrhlP0FMqDIfLg3_VGbodv-A8g3G_Taqnmd8eQt3JmVt9mn3MKBNfnejAtKaJwxXx-WGbwCOESz7gSNS6DuoccSsCrQqJ-VmnP_Kj9E785Fpum4Z3Vv0Htj6EABkgyPxoH3KlEy4zDRL_rIk7zTFXF67MUtPpb6NKcw.8_l5m0IeqxbqQbNeIPXgJg");
             out_envelope.mutable_payload()->PackFrom(ingestedImage);
             boost::uuids::random_generator uuid_gen;
-            out_envelope.set_correlation_id(boost::uuids::to_string(uuid_gen()));
+            out_envelope.set_correlation_ids(0, boost::uuids::to_string(uuid_gen()));
 
             const std::string key = request.uri().path;
             const auto out_payload = out_envelope.SerializeAsString();

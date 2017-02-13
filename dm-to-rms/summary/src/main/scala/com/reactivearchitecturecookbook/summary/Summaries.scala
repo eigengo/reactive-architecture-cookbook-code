@@ -31,7 +31,7 @@ case class Summaries private(summaries: Map[String, Summaries.SummaryWithOffsets
 
   import Summaries._
 
-  def appending(consumerRecords: List[ConsumerRecord[String, Envelope]]): (Summaries, Map[String, Outcome], Offsets) = {
+  def appending(consumerRecords: List[ConsumerRecord[String, Envelope]]): (Summaries, Map[String, Envelope], Offsets) = {
     //noinspection VariablePatternShadow
     val updated = consumerRecords.foldLeft(summaries) {
       case (updatedMap, cr) ⇒

@@ -98,8 +98,7 @@ class SummariesActor(consumerConf: KafkaConsumer.Conf[String, Envelope],
 
       if (outcomes.nonEmpty) {
         val sent = outcomes.map { case (transactionId, outcome) ⇒
-          val out = Envelope()
-          kafkaProducer.send(KafkaProducerRecord("summary-1", transactionId, out))
+          kafkaProducer.send(KafkaProducerRecord("summary-1", transactionId, outcome))
         }
         import context.dispatcher
         Future.sequence(sent).onComplete {
