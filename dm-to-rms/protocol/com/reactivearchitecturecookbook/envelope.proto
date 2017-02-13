@@ -15,7 +15,7 @@ message Envelope {
   // the correlationIds
   repeated string correlation_ids = 1;
   // the token issued by our authz service
-  bytes token = 2;
+  string token = 2;
   // the payload itself; a protobuf-encoded value
   google.protobuf.Any payload = 4;
 }
