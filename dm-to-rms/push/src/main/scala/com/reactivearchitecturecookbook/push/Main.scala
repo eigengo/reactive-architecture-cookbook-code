@@ -10,8 +10,8 @@ import java.util.{Date, UUID}
 
 import akka.actor.ActorSystem
 import com.nimbusds.jose.crypto.{RSADecrypter, RSAEncrypter}
-import com.nimbusds.jose.{EncryptionMethod, JWEAlgorithm, JWEHeader}
-import com.nimbusds.jwt.{EncryptedJWT, JWTClaimsSet}
+import com.nimbusds.jose._
+import com.nimbusds.jwt.{EncryptedJWT, JWTClaimsSet, SignedJWT}
 import com.typesafe.config.{ConfigFactory, ConfigResolveOptions}
 
 object Main extends App {
@@ -52,7 +52,6 @@ object Main extends App {
   val encrypter = new RSAEncrypter(publicKey.asInstanceOf[RSAPublicKey])
   jwt.encrypt(encrypter)
   val jwtString = jwt.serialize()
-
   println(jwtString)
 
   val jwt2 = EncryptedJWT.parse(jwtString)

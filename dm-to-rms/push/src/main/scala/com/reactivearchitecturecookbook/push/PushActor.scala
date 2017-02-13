@@ -1,11 +1,14 @@
 package com.reactivearchitecturecookbook.push
 
-import java.net.URL
 import java.nio.file.{Files, Paths}
 import java.security.KeyFactory
 import java.security.spec.PKCS8EncodedKeySpec
 
 import akka.actor.{Actor, OneForOneStrategy, Props, SupervisorStrategy}
+import akka.http.scaladsl._
+import akka.http.scaladsl.model._
+import akka.stream.ActorMaterializer
+import akka.stream.scaladsl._
 import cakesolutions.kafka._
 import cakesolutions.kafka.akka.KafkaConsumerActor.Subscribe
 import cakesolutions.kafka.akka.{ConsumerRecords, KafkaConsumerActor}
@@ -14,7 +17,9 @@ import com.nimbusds.jose.crypto.RSADecrypter
 import com.nimbusds.jwt.EncryptedJWT
 import com.reactivearchitecturecookbook.Envelope
 import com.redis.RedisClientPool
+import com.trueaccord.scalapb.json.JsonFormat
 import com.typesafe.config.Config
+import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.serialization.{StringDeserializer, StringSerializer}
 
 import scala.util.Try
@@ -52,7 +57,11 @@ class PushActor(consumerConf: KafkaConsumer.Conf[String, Envelope],
   private[this] val kafkaConsumerActor = context.actorOf(
     KafkaConsumerActor.props(consumerConf = consumerConf, actorConf = consumerActorConf, downstreamActor = self)
   )
+
   import scala.concurrent.duration._
+
+  implicit val materializer = ActorMaterializer()
+  private val pool = Http(context.system).superPool[(TopicPartition, Long)]()
 
   override def supervisorStrategy: SupervisorStrategy = OneForOneStrategy(maxNrOfRetries = 3, withinTimeRange = 3.seconds) {
     case _ ⇒ SupervisorStrategy.Restart
@@ -65,15 +74,17 @@ class PushActor(consumerConf: KafkaConsumer.Conf[String, Envelope],
 
   override def receive: Receive = {
     case PushActor.extractor(consumerRecords) ⇒
-      val x = consumerRecords.recordsList.flatMap { record ⇒
-        val encryptedJwt = EncryptedJWT.parse(record.value().token)
-        for {
-          _ ← Try(encryptedJwt.decrypt(jwtDecrypter)).toOption
-          pushUrlString ← Option(encryptedJwt.getJWTClaimsSet.getStringClaim("push"))
-          pushURL ← Try(new URL(pushUrlString)).toOption
-        } yield (pushURL, record.key(), record.value())
-      }.groupBy(_._1)
-      x
+      consumerRecords.recordsList.foreach { record ⇒
+        (for {
+          encryptedJwt ← Try(EncryptedJWT.parse(record.value().token))
+          _ ← Try(encryptedJwt.decrypt(jwtDecrypter))
+          uri ← Try(Uri(encryptedJwt.getJWTClaimsSet.getStringClaim("push")))
+          entity = HttpEntity(ContentTypes.`application/json`, "") //JsonFormat.toJsonString(record.value().payload))
+
+          request = HttpRequest(method = HttpMethods.POST, uri = uri, entity = entity)
+          context = (new TopicPartition(record.topic(), record.partition()), record.offset())
+        } yield (request, context)).foreach(request ⇒ Source.single(request).via(pool))
+      }
   }
 
 }
