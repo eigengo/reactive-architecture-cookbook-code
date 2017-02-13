@@ -2,7 +2,6 @@
 #include <sstream>
 #include <iostream>
 #include <iomanip>
-#include <azmq/socket.hpp>
 #include <boost/asio.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/program_options.hpp>
