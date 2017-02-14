@@ -17,7 +17,6 @@ import com.nimbusds.jose.crypto.RSADecrypter
 import com.nimbusds.jwt.EncryptedJWT
 import com.reactivearchitecturecookbook.Envelope
 import com.redis.RedisClientPool
-import com.trueaccord.scalapb.json.JsonFormat
 import com.typesafe.config.Config
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.serialization.{StringDeserializer, StringSerializer}
