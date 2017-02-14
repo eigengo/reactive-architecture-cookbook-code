@@ -21,7 +21,7 @@ import com.typesafe.config.Config
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.serialization.{StringDeserializer, StringSerializer}
 
-import scala.util.Try
+import scala.util.{Success, Try}
 
 object PushActor {
   private val extractor = ConsumerRecords.extractor[String, Envelope]
@@ -82,8 +82,10 @@ class PushActor(consumerConf: KafkaConsumer.Conf[String, Envelope],
 
           request = HttpRequest(method = HttpMethods.POST, uri = uri, entity = entity)
           context = (new TopicPartition(record.topic(), record.partition()), record.offset())
-        } yield (request, context)).foreach(request ⇒ Source.single(request).via(pool))
+        } yield (request, context)).foreach(request ⇒ Source.single(request).via(pool).runWith(Sink.actorRef(self, ())))
       }
+    case (Success(resp@HttpResponse(_, _, entity, _)), (tp: TopicPartition, offset: Long)) ⇒
+      resp.discardEntityBytes()
   }
 
 }
