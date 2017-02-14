@@ -15,6 +15,8 @@ find_package(OpenSSL REQUIRED)
 find_package(Boost COMPONENTS system regex program_options REQUIRED)
 enable_testing()
 
+# https://github.com/pokowaka/jwt-cpp
+
 # This is OSX & Homebrew hack
 if (APPLE)
     set(OPENSSL_LIBRARIES ${OPENSSL_ROOT_DIR}/lib/libssl.dylib ${OPENSSL_ROOT_DIR}/lib/libcrypto.dylib )
