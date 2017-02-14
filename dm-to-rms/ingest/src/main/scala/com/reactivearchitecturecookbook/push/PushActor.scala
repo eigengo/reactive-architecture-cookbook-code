@@ -10,7 +10,7 @@ import akka.http.scaladsl.model._
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl._
 import cakesolutions.kafka._
-import cakesolutions.kafka.akka.KafkaConsumerActor.{Confirm, Subscribe}
+import cakesolutions.kafka.akka.KafkaConsumerActor.Subscribe
 import cakesolutions.kafka.akka.{ConsumerRecords, KafkaConsumerActor}
 import com.nimbusds.jose.JWEDecrypter
 import com.nimbusds.jose.crypto.RSADecrypter
@@ -84,7 +84,6 @@ class PushActor(consumerConf: KafkaConsumer.Conf[String, Envelope],
           context = (new TopicPartition(record.topic(), record.partition()), record.offset())
         } yield (request, context)).foreach(request ⇒ Source.single(request).via(pool).runWith(Sink.actorRef(self, ())))
       }
-      kafkaConsumerActor ! Confirm(consumerRecords.offsets)
     case (Success(resp@HttpResponse(_, _, entity, _)), (tp: TopicPartition, offset: Long)) ⇒
       resp.discardEntityBytes()
   }
