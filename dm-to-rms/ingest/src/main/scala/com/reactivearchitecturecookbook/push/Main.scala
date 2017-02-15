@@ -1,5 +1,8 @@
 package com.reactivearchitecturecookbook.push
 
+import java.nio.file.{Files, Paths}
+import java.security.KeyFactory
+import java.security.spec.PKCS8EncodedKeySpec
 import java.util.UUID
 
 import akka.actor.ActorSystem
@@ -7,7 +10,8 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpRequest
 import akka.stream.ActorMaterializer
 import cakesolutions.kafka.{KafkaProducer, KafkaProducerRecord, KafkaSerializer}
-import com.nimbusds.jwt.EncryptedJWT
+import com.nimbusds.jose.crypto.RSADecrypter
+import com.nimbusds.jwt.{EncryptedJWT, JWTClaimsSet}
 import com.reactivearchitecturecookbook.Envelope
 import com.reactivearchitecturecookbook.ingest.v1m0.IngestedImage
 import com.typesafe.config.{ConfigFactory, ConfigResolveOptions}
@@ -24,6 +28,12 @@ object Main extends App with IngestRoute {
   implicit val system: ActorSystem = ActorSystem("ingest_1_0_0", config)
   implicit val materializer: ActorMaterializer = ActorMaterializer()
 
+  val decrypter = {
+    val privateKeySpec = new PKCS8EncodedKeySpec(Files.readAllBytes(Paths.get(config.getString("app.keyPath"), "jwt_rsa")))
+    val privateKey = KeyFactory.getInstance("RSA").generatePrivate(privateKeySpec)
+    new RSADecrypter(privateKey)
+  }
+
   lazy val kafkaProducer = {
     val conf = KafkaProducer.Conf(
       config.getConfig("app.kafka.producer-config"),
@@ -33,24 +43,26 @@ object Main extends App with IngestRoute {
     KafkaProducer(conf)
   }
 
-  override def authorizeJwt(token: String): Boolean = {
+  override def authorizeAndExtract(token: String): Try[JWTClaimsSet] = {
     for {
       jwt ← Try(EncryptedJWT.parse(token))
-      jwt.getJWTClaimsSet.
-    } yield true
-
-    true
+      _ ← Try(jwt.decrypt(decrypter))
+      cs = jwt.getJWTClaimsSet
+      if cs.getStringClaim("cid") != null
+    } yield cs
   }
 
   override def extractIngestImage(request: HttpRequest)(implicit ec: ExecutionContext): Future[IngestedImage] = {
     Future(IngestedImage())
   }
 
-  override def publishIngestedImage(token: String, transactionId: String)(ingestedImage: IngestedImage)(implicit ec: ExecutionContext): Future[Unit] = {
+  override def publishIngestedImage(claimsSet: JWTClaimsSet, token: String, transactionId: String)(ingestedImage: IngestedImage)(implicit ec: ExecutionContext): Future[Unit] = {
+    val clientId = claimsSet.getStringClaim("cid")
+
     val payload = com.google.protobuf.any.Any.pack(ingestedImage)
     val envelope = Envelope(correlationIds = Seq(UUID.randomUUID().toString), token, Some(payload))
 
-    kafkaProducer.send(KafkaProducerRecord(transactionId, envelope)).map(println)
+    kafkaProducer.send(KafkaProducerRecord(clientId, envelope)).map(println)
   }
 
   import system.dispatcher

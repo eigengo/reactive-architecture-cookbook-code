@@ -3,21 +3,23 @@ package com.reactivearchitecturecookbook.push
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.unmarshalling.GenericUnmarshallers
+import com.nimbusds.jwt.JWTClaimsSet
 import com.reactivearchitecturecookbook.ingest.v1m0.IngestedImage
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 trait IngestRoute extends Directives with GenericUnmarshallers {
 
-  def authorizeJwt(token: String): Boolean
+  def authorizeAndExtract(token: String): Try[JWTClaimsSet]
 
   def extractIngestImage(request: HttpRequest)(implicit ec: ExecutionContext): Future[IngestedImage]
 
-  def publishIngestedImage(token: String, transactionId: String)(ingestedImage: IngestedImage)(implicit ec: ExecutionContext): Future[Unit]
+  def publishIngestedImage(claimsSet: JWTClaimsSet, token: String, transactionId: String)(ingestedImage: IngestedImage)(implicit ec: ExecutionContext): Future[Unit]
 
-  private def authorizedRouteHandler(requestContext: RequestContext, token: String, transactionId: String)(implicit ec: ExecutionContext): Future[RouteResult] = {
+  private def authorizedRouteHandler(requestContext: RequestContext, token: String, claimsSet: JWTClaimsSet, transactionId: String)(implicit ec: ExecutionContext): Future[RouteResult] = {
     extractIngestImage(requestContext.request)
-      .flatMap(publishIngestedImage(token, transactionId))
+      .flatMap(publishIngestedImage(claimsSet, token, transactionId))
       .flatMap { _ ⇒ requestContext.complete("") }
       .recoverWith { case x ⇒ requestContext.fail(x) }
   }
@@ -26,10 +28,11 @@ trait IngestRoute extends Directives with GenericUnmarshallers {
     path(RemainingPath) { transactionId ⇒
       post {
         extractCredentials {
-          case Some(httpCredentials) if httpCredentials.scheme() == "Bearer" ⇒
+          case Some(credentials) if credentials.scheme() == "Bearer" ⇒
             request: RequestContext ⇒
-            if (authorizeJwt(httpCredentials.token())) authorizedRouteHandler(request, httpCredentials.token(), transactionId.toString())
-            else request.reject(AuthorizationFailedRejection)
+            authorizeAndExtract(credentials.token())
+              .map(cs ⇒ authorizedRouteHandler(request, credentials.token(), cs, transactionId.toString()))
+              .getOrElse(request.reject(AuthorizationFailedRejection))
           case _ ⇒ _.reject(AuthorizationFailedRejection)
         }
       }
