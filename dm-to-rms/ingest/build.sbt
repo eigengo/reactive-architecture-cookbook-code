@@ -10,6 +10,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % akkaVersion,
   "com.typesafe.akka" %% "akka-testkit" % akkaVersion,
   "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
+  "com.typesafe.akka" %% "akka-http2-support" % akkaHttpVersion,
   "net.cakesolutions" %% "scala-kafka-client" % scalaKafkaClientVersion,
   "net.cakesolutions" %% "scala-kafka-client-akka" % scalaKafkaClientVersion,
   "com.trueaccord.scalapb" %% "scalapb-json4s" % "0.1.6",
