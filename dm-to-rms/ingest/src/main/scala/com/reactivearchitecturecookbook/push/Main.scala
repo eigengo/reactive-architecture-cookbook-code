@@ -7,12 +7,14 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpRequest
 import akka.stream.ActorMaterializer
 import cakesolutions.kafka.{KafkaProducer, KafkaProducerRecord, KafkaSerializer}
+import com.nimbusds.jwt.EncryptedJWT
 import com.reactivearchitecturecookbook.Envelope
 import com.reactivearchitecturecookbook.ingest.v1m0.IngestedImage
 import com.typesafe.config.{ConfigFactory, ConfigResolveOptions}
 import org.apache.kafka.common.serialization.StringSerializer
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 object Main extends App with IngestRoute {
   System.setProperty("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
@@ -31,7 +33,14 @@ object Main extends App with IngestRoute {
     KafkaProducer(conf)
   }
 
-  override def authorizeJwt(token: String): Boolean = true
+  override def authorizeJwt(token: String): Boolean = {
+    for {
+      jwt ← Try(EncryptedJWT.parse(token))
+      jwt.getJWTClaimsSet.
+    } yield true
+
+    true
+  }
 
   override def extractIngestImage(request: HttpRequest)(implicit ec: ExecutionContext): Future[IngestedImage] = {
     Future(IngestedImage())
