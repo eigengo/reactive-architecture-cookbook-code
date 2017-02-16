@@ -1,17 +1,16 @@
 package com.reactivearchitecturecookbook.push
 
-import java.io.FileOutputStream
 import java.nio.file.{Files, Paths}
-import java.security.{KeyFactory, KeyPairGenerator}
+import java.security.KeyFactory
 import java.security.interfaces.RSAPublicKey
 import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
 import java.text.SimpleDateFormat
 import java.util.{Date, UUID}
 
 import akka.actor.ActorSystem
-import com.nimbusds.jose.crypto.{RSADecrypter, RSAEncrypter}
 import com.nimbusds.jose._
-import com.nimbusds.jwt.{EncryptedJWT, JWTClaimsSet, SignedJWT}
+import com.nimbusds.jose.crypto.{RSADecrypter, RSAEncrypter}
+import com.nimbusds.jwt.{EncryptedJWT, JWTClaimsSet}
 import com.typesafe.config.{ConfigFactory, ConfigResolveOptions}
 
 object Main extends App {
@@ -19,15 +18,6 @@ object Main extends App {
   System.setProperty("REDIS_HOST", "localhost")
   System.setProperty("REDIS_PORT", "6379")
   System.setProperty("KEY_PATH", "")
-
-  val kp = KeyPairGenerator.getInstance("RSA").genKeyPair()
-  def save(fn: String, contents: Array[Byte]): Unit = {
-    val fos = new FileOutputStream(fn)
-    fos.write(contents)
-    fos.close()
-  }
-  save("jwt_rsa", kp.getPrivate.getEncoded)
-  save("jwt_rsa.pub", kp.getPublic.getEncoded)
 
   val config = ConfigFactory.load("push.conf").resolve(ConfigResolveOptions.defaults())
 
@@ -42,7 +32,7 @@ object Main extends App {
       .notBeforeTime(new Date())
       .issueTime(new Date())
       .expirationTime(new SimpleDateFormat("yyyyMMdd").parse("20180101"))
-      .claim("push", "https://client.system.com")
+      .claim("push-*", "https://client.system.com")
       .jwtID(UUID.randomUUID().toString)
       .build()
 

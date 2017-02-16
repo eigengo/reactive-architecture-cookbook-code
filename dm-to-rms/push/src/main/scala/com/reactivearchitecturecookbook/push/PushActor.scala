@@ -8,23 +8,26 @@ import akka.actor.{Actor, OneForOneStrategy, Props, SupervisorStrategy}
 import akka.http.scaladsl._
 import akka.http.scaladsl.model._
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl._
 import cakesolutions.kafka._
 import cakesolutions.kafka.akka.KafkaConsumerActor.{Confirm, Subscribe}
 import cakesolutions.kafka.akka.{ConsumerRecords, KafkaConsumerActor}
+import com.google.protobuf.ByteString
 import com.nimbusds.jose.JWEDecrypter
 import com.nimbusds.jose.crypto.RSADecrypter
 import com.nimbusds.jwt.EncryptedJWT
 import com.reactivearchitecturecookbook.Envelope
+import com.reactivearchitecturecookbook.push.v1m0.PushRequest
 import com.redis.RedisClientPool
 import com.typesafe.config.Config
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.serialization.{StringDeserializer, StringSerializer}
 
-import scala.util.{Success, Try}
+import scala.concurrent.Future
+import scala.util.Try
 
 object PushActor {
   private val extractor = ConsumerRecords.extractor[String, Envelope]
+  private case object Sent
 
   def props(config: Config): Props = {
     val privateKeySpec = new PKCS8EncodedKeySpec(Files.readAllBytes(Paths.get(config.getString("keyPath"), "jwt_rsa")))
@@ -43,7 +46,7 @@ object PushActor {
       KafkaSerializer[Envelope](_.toByteArray)
     )
 
-    Props(classOf[PushActor], consumerConf, consumerActorConf, producerConf, rsaDecrypter)
+    Props(classOf[PushOutputActor], consumerConf, consumerActorConf, producerConf, rsaDecrypter)
   }
 }
 
@@ -56,6 +59,7 @@ class PushActor(consumerConf: KafkaConsumer.Conf[String, Envelope],
   private[this] val kafkaConsumerActor = context.actorOf(
     KafkaConsumerActor.props(consumerConf = consumerConf, actorConf = consumerActorConf, downstreamActor = self)
   )
+  private[this] val kafkaProducer = KafkaProducer(producerConf)
 
   import scala.concurrent.duration._
 
@@ -73,20 +77,21 @@ class PushActor(consumerConf: KafkaConsumer.Conf[String, Envelope],
 
   override def receive: Receive = {
     case PushActor.extractor(consumerRecords) ⇒
-      consumerRecords.recordsList.foreach { record ⇒
+      val out = consumerRecords.recordsList.flatMap { record ⇒
         (for {
-          encryptedJwt ← Try(EncryptedJWT.parse(record.value().token))
-          _ ← Try(encryptedJwt.decrypt(jwtDecrypter))
-          uri ← Try(Uri(encryptedJwt.getJWTClaimsSet.getStringClaim("push")))
-          entity = HttpEntity(ContentTypes.`application/json`, "") //JsonFormat.toJsonString(record.value().payload))
+          jwt ← Try(EncryptedJWT.parse(record.value().token))
+          _ ← Try(jwt.decrypt(jwtDecrypter))
+          uri ← Try(Uri(jwt.getJWTClaimsSet.getStringClaim("push-*")))
+          entity = HttpEntity(ContentTypes.`application/json`, "entity here") //JsonFormat.toJsonString(record.value().payload))
 
-          request = HttpRequest(method = HttpMethods.POST, uri = uri, entity = entity)
-          context = (new TopicPartition(record.topic(), record.partition()), record.offset())
-        } yield (request, context)).foreach(request ⇒ Source.single(request).via(pool).runWith(Sink.actorRef(self, ())))
+          payload = PushRequest(uri.toString(), ByteString.copyFrom(entity.data.asByteBuffer))
+          newEnvelope = record.value().withPayload(com.google.protobuf.any.Any.pack(payload))
+        } yield (record.key(), newEnvelope)).map { case (k, v) ⇒
+          kafkaProducer.send(KafkaProducerRecord("push-internal-1", k, v))
+        }.toOption
       }
-      kafkaConsumerActor ! Confirm(consumerRecords.offsets)
-    case (Success(resp@HttpResponse(_, _, entity, _)), (tp: TopicPartition, offset: Long)) ⇒
-      resp.discardEntityBytes()
+
+      Future.sequence(out).foreach(_ ⇒ kafkaConsumerActor ! Confirm(consumerRecords.offsets))
   }
 
 }
