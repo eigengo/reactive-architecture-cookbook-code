@@ -1,0 +1,7 @@
+syntax = "proto3";
+package com.reactivearchitecturecookbook.push.v1m0;
+
+message PushRequest {
+  string uri = 1;
+  bytes entity = 2;
+}

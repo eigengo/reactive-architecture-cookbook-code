@@ -8,6 +8,8 @@ lazy val scalaKafkaClientVersion = "0.10.1.2"
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % akkaVersion,
+  "com.typesafe.akka" %% "akka-persistence" % akkaVersion,
+  "com.typesafe.akka" %% "akka-persistence-query-experimental" % akkaVersion,
   "com.typesafe.akka" %% "akka-testkit" % akkaVersion,
   "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
   "net.cakesolutions" %% "scala-kafka-client" % scalaKafkaClientVersion,
@@ -21,7 +23,7 @@ libraryDependencies ++= Seq(
 
 PB.includePaths in Compile ++= Seq(file("../protocol"))
 
-PB.protoSources in Compile := Seq(file("../protocol"))
+PB.protoSources in Compile := Seq(file("../protocol"), (sourceDirectory in Compile).value / "../protocol")
 
 PB.targets in Compile := Seq(
   scalapb.gen(flatPackage = true) -> (sourceManaged in Compile).value
