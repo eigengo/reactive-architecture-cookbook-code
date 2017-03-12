@@ -1,6 +1,8 @@
 GEN=gen
+VND=vnd
 GENGOPATH=$(shell pwd)/$(GEN)
-GOPATH=$(shell pwd):$(GENGOPATH)
+VNDGOPATH=$(shell pwd)/$(VND)
+GOPATH=$(VNDGOPATH):$(shell pwd):$(GENGOPATH)
 GOBIN=$(shell pwd)/bin
 GOFILES=$(wildcard *.go)
 GONAME=$(shell basename "$(PWD)")
@@ -19,7 +21,7 @@ protoc:
 	@echo "Building protocols from $(PROTOFILES)"
 	@GOPATH=$(GOPATH) go get -u github.com/golang/protobuf/protoc-gen-go
 	mkdir -p $(GENGOPATH)/src
-	$(foreach p,$(PROTOFILES),PATH=$(PATH):$(GOBIN) protoc --go_out=$(GEN)/src $(p) -I $(PROTODIR);)
+	$(foreach p,$(PROTOFILES),PATH=$(PATH):$(VNDGOPATH)/bin protoc --go_out=$(GEN)/src $(p) -I $(PROTODIR);)
 
 get:
 	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go get .
@@ -50,6 +52,7 @@ clear:
 clean:
 	@echo "Cleaning"
 	@rm -rf $(GENGOPATH)
+	@rm -rf $(VNDGOPATH)
 	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go clean
 
 .PHONY: build get install run watch start stop restart clean protoc
