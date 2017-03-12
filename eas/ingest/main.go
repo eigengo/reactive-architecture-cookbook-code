@@ -29,8 +29,14 @@ func main() {
 
 	var envelope p.Envelope
 	var session sp.Session
+	var sensorData sp.SensorData
+	var sensor sp.Sensor
+	sensor.Location = sp.SensorLocation_Wrist
+	sensor.DataTypes = []sp.SensorDataType{sp.SensorDataType_Acceleration}
+	sensorData.Sensors = []*sp.Sensor{&sensor}
+	sensorData.Values = make([]float32, 400, 400)
 	session.SessionId = "random-string"
-	envelope.Token = "fooo"
+	session.SensorData = &sensorData
 
 	a, _ := ptypes.MarshalAny(&session)
 	envelope.Payload = a
@@ -39,9 +45,11 @@ func main() {
 	log.Println("Marshalled ", eb)
 
 	var envelope2 p.Envelope
+	var session2 sp.Session
 	proto.Unmarshal(eb, &envelope2)
+	ptypes.UnmarshalAny(envelope2.Payload, &session2)
 
-	log.Println("E2 ", envelope2)
+	log.Println("E2 ", envelope2, session2)
 
 	if *verbose {
 		sarama.Logger = log.New(os.Stdout, "[sarama] ", log.LstdFlags)

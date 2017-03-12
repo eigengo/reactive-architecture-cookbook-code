@@ -4,5 +4,37 @@ option go_package = "github.com/reactivesystemsarchitecture/eas/protocol/session
 
 message Session {
   string session_id = 1;
-  bytes content = 2;
+  repeated Label automatic_labels = 2;
+  repeated Label user_labels = 3;
+  SensorData sensor_data = 4;
+}
+
+message Label {
+  float start_time = 1;
+  float duration = 2;
+  string label = 3;
+}
+
+message SensorData {
+  repeated float values = 1;
+  repeated Sensor sensors = 2;
+}
+
+message Sensor {
+  SensorLocation location = 1;
+  repeated SensorDataType data_types = 2;
+}
+
+enum SensorLocation {
+  Chest = 0;
+  Arm = 1;
+  Wrist = 2;
+  Hip = 3;
+  Ankle = 4;
+}
+
+enum SensorDataType {
+  Acceleration = 0;
+  Rotation = 1;
+  HeartRate = 2;
 }
