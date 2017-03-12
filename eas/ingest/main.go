@@ -11,16 +11,37 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
+	p "github.com/reactivesystemsarchitecture/eas/protocol"
+	sp "github.com/reactivesystemsarchitecture/eas/protocol/session/v1m0"
 )
 
 var (
-	addr      = flag.String("addr", ":8080", "The address to bind to")
-	brokers   = flag.String("brokers", "localhost:9092", "The Kafka brokers to connect to, as a comma separated list")
-	verbose   = flag.Bool("verbose", false, "Turn on Sarama logging")
+	addr    = flag.String("addr", ":8080", "The address to bind to")
+	brokers = flag.String("brokers", "localhost:9092", "The Kafka brokers to connect to, as a comma separated list")
+	verbose = flag.Bool("verbose", false, "Turn on Sarama logging")
 )
 
 func main() {
 	flag.Parse()
+
+	var envelope p.Envelope
+	var session sp.Session
+	session.SessionId = "random-string"
+	envelope.Token = "fooo"
+
+	a, _ := ptypes.MarshalAny(&session)
+	envelope.Payload = a
+
+	eb, _ := proto.Marshal(&envelope)
+	log.Println("Marshalled ", eb)
+
+	var envelope2 p.Envelope
+	proto.Unmarshal(eb, &envelope2)
+
+	log.Println("E2 ", envelope2)
 
 	if *verbose {
 		sarama.Logger = log.New(os.Stdout, "[sarama] ", log.LstdFlags)
@@ -38,11 +59,10 @@ func main() {
 	partitions, _ := accessLogConsumer.Partitions("access_log")
 	var accessLogPartitionConsumers []sarama.PartitionConsumer
 	for _, partition := range partitions {
-		if pc, err := accessLogConsumer.ConsumePartition("access_log", partition, sarama.OffsetOldest);
-			err == nil {
+		if pc, err := accessLogConsumer.ConsumePartition("access_log", partition, sarama.OffsetOldest); err == nil {
 			go func() {
 				for {
-					x := <- pc.Messages()
+					x := <-pc.Messages()
 					log.Println("Received: ", x)
 				}
 			}()
@@ -51,8 +71,8 @@ func main() {
 	}
 
 	server := &Server{
-		DataCollector:     newDataCollector(brokerList),
-		AccessLogProducer: newAccessLogProducer(brokerList),
+		DataCollector:               newDataCollector(brokerList),
+		AccessLogProducer:           newAccessLogProducer(brokerList),
 		AccessLogPartitionConsumers: accessLogPartitionConsumers,
 	}
 	defer func() {
@@ -65,8 +85,8 @@ func main() {
 }
 
 type Server struct {
-	DataCollector     sarama.SyncProducer
-	AccessLogProducer sarama.AsyncProducer
+	DataCollector               sarama.SyncProducer
+	AccessLogProducer           sarama.AsyncProducer
 	AccessLogPartitionConsumers []sarama.PartitionConsumer
 }
 

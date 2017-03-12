@@ -1,0 +1,22 @@
+syntax = "proto3";
+package com.reactivesystemsarchitecture;
+option go_package = "github.com/reactivesystemsarchitecture/eas/protocol";
+
+import "google/protobuf/any.proto";
+
+// This is a common envelope for *all* messages in the system.
+// We only care about the correlationId, which allows us to track the messages in the
+// distributed system; the version, which, together with payloadType tells us how to
+// deserialize payload.
+//
+// It is possible that some services will not even bother parsing the payload: some
+// don't care (e.g. counting, billing, ...); some can't, because the payload might
+// be encrypted.
+message Envelope {
+  // the correlationIds
+  string correlation_id = 1;
+  // the token issued by our authz service
+  string token = 2;
+  // the payload itself; a protobuf-encoded value
+  google.protobuf.Any payload = 4;
+}
