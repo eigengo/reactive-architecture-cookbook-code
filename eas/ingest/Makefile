@@ -9,7 +9,7 @@ PID=/tmp/go-$(GONAME).pid
 PROTODIR=../protocol
 PROTOFILES=$(shell find $(PROTODIR) -type f -name '*.proto')
 
-all: get protoc build
+all: protoc get build
 
 build:
 	@echo "Building $(GOFILES) using $(GOPATH) to ./bin"
@@ -19,7 +19,7 @@ protoc:
 	@echo "Building protocols from $(PROTOFILES)"
 	@GOPATH=$(GOPATH) go get -u github.com/golang/protobuf/protoc-gen-go
 	mkdir -p $(GENGOPATH)/src
-	$(foreach p,$(PROTOFILES),protoc --go_out=$(GEN)/src $(p) -I $(PROTODIR);)
+	$(foreach p,$(PROTOFILES),PATH=$(PATH):$(GOBIN) protoc --go_out=$(GEN)/src $(p) -I $(PROTODIR);)
 
 get:
 	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go get .
