@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"log"
 	"fmt"
+	"github.com/reactivesystemsarchitecture/eas/ingest/cassandra"
 )
 
 var (
@@ -48,18 +49,21 @@ func main() {
 	// Here we are instantiating the gorilla/mux router
 	r := mux.NewRouter()
 
-	r.Handle("/session", PostSessionHandler(ingest.NewCassandraSessionEnvelopeHandler())).
-		Methods("POST").
-		Headers("Content-Type", "application/x-protobuf")
+	if handler, err := cassandra.NewCluster(); err == nil {
+		r.Handle("/session", PostSessionHandler(handler)).
+			Methods("POST").
+			Headers("Content-Type", "application/x-protobuf")
 
-	// Our application will run on port 3000. Here we declare the port and pass in our router.
-	log.Fatal(http.ListenAndServe(*addr, r))
+		// Our application will run on port 3000. Here we declare the port and pass in our router.
+		log.Fatal(http.ListenAndServe(*addr, r))
+	} else {
+		log.Fatal(err)
+	}
+
 }
 
 func PostSessionHandler(envelopeHandler ingest.EnvelopeHandler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Here we are converting the slice of products to json
-		emptyBody := []byte("{}")
 		w.Header().Set("Content-Type", "application/json")
 
 		if body, err := ioutil.ReadAll(r.Body); err == nil {
@@ -72,7 +76,7 @@ func PostSessionHandler(envelopeHandler ingest.EnvelopeHandler) http.Handler {
 					w.WriteHeader(http.StatusInternalServerError)
 					w.Write([]byte(fmt.Sprintf("{\"error\":\"%s\"}", herr.Error())))
 				} else {
-					w.Write(emptyBody)
+					w.Write([]byte("{}"))
 				}
 			} else {
 				w.WriteHeader(http.StatusBadRequest)
