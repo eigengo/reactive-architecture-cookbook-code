@@ -49,7 +49,7 @@ func main() {
 	// Here we are instantiating the gorilla/mux router
 	r := mux.NewRouter()
 
-	if handler, err := cassandra.NewCluster(); err == nil {
+	if handler, err := cassandra.NewEnvelopeHandler(":aa"); err == nil {
 		r.Handle("/session", PostSessionHandler(handler)).
 			Methods("POST").
 			Headers("Content-Type", "application/x-protobuf")

@@ -11,11 +11,11 @@ import (
 	"github.com/gocql/gocql"
 )
 
-type cassandraEnvelopeHandler struct {
+type envelopeHandler struct {
 	clusterConfig *gocql.ClusterConfig
 }
 
-func (c *cassandraEnvelopeHandler) Handle(envelope *p.Envelope) error {
+func (c *envelopeHandler) Handle(envelope *p.Envelope) error {
 
 	var session ps.Session
 	if err := c.Validate(envelope); err != nil {
@@ -30,7 +30,7 @@ func (c *cassandraEnvelopeHandler) Handle(envelope *p.Envelope) error {
 	return nil
 }
 
-func (c *cassandraEnvelopeHandler) Validate(envelope *p.Envelope) error {
+func (c *envelopeHandler) Validate(envelope *p.Envelope) error {
 	var session ps.Session
 	if envelope.Payload == nil {
 		return errors.New("envelope.Payload == nil")
@@ -42,7 +42,7 @@ func (c *cassandraEnvelopeHandler) Validate(envelope *p.Envelope) error {
 	return nil
 }
 
-func NewCluster(hosts ...string) (ingest.EnvelopeHandler, error) {
+func NewEnvelopeHandler(hosts ...string) (ingest.EnvelopeHandler, error) {
 	if len(hosts) == 0 {
 		return nil, errors.New("No hosts supplied")
 	}
@@ -50,7 +50,7 @@ func NewCluster(hosts ...string) (ingest.EnvelopeHandler, error) {
 	clusterConfig.Keyspace = "eas"
 	clusterConfig.Consistency = gocql.Quorum
 
-	return &cassandraEnvelopeHandler{
+	return &envelopeHandler{
 		clusterConfig: clusterConfig,
 	}, nil
 }
