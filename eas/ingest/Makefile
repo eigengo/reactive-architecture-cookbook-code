@@ -27,7 +27,7 @@ get:
 	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go get .
 
 test:
-	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test . -v
+	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test . -v -covermode=atomic -o bin/test -coverprofile=bin/cover.out
 
 
 clean:
