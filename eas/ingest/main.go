@@ -5,9 +5,11 @@ import (
 	"net/http"
 	"github.com/gorilla/mux"
 	p "github.com/reactivesystemsarchitecture/eas/protocol"
-	h "github.com/reactivesystemsarchitecture/eas"
+	"github.com/reactivesystemsarchitecture/eas/ingest"
 	"github.com/golang/protobuf/proto"
 	"io/ioutil"
+	"log"
+	"fmt"
 )
 
 var (
@@ -46,15 +48,15 @@ func main() {
 	// Here we are instantiating the gorilla/mux router
 	r := mux.NewRouter()
 
-	r.Handle("/session", PostSessionHandler(h.EnvelopeHandlerFunc(func(e *p.Envelope) error {
-		return nil
-	}))).Methods("POST").Headers("Content-Type", "application/x-protobuf")
+	r.Handle("/session", PostSessionHandler(ingest.NewCassandraSessionEnvelopeHandler())).
+		Methods("POST").
+		Headers("Content-Type", "application/x-protobuf")
 
 	// Our application will run on port 3000. Here we declare the port and pass in our router.
-	http.ListenAndServe(*addr, r)
+	log.Fatal(http.ListenAndServe(*addr, r))
 }
 
-func PostSessionHandler(envelopeHandler h.EnvelopeHandler) http.Handler {
+func PostSessionHandler(envelopeHandler ingest.EnvelopeHandler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Here we are converting the slice of products to json
 		emptyBody := []byte("{}")
@@ -63,19 +65,22 @@ func PostSessionHandler(envelopeHandler h.EnvelopeHandler) http.Handler {
 		if body, err := ioutil.ReadAll(r.Body); err == nil {
 			var envelope p.Envelope
 			if umerr := proto.Unmarshal(body, &envelope); umerr == nil {
-				if herr := envelopeHandler.Handle(&envelope); herr != nil {
+				if herr := envelopeHandler.Validate(&envelope); herr != nil {
+					w.WriteHeader(http.StatusBadRequest)
+					w.Write([]byte(fmt.Sprintf("{\"error\":\"%s\"}", herr.Error())))
+				} else if herr := envelopeHandler.Handle(&envelope); herr != nil {
 					w.WriteHeader(http.StatusInternalServerError)
-					w.Write([]byte(":("))
+					w.Write([]byte(fmt.Sprintf("{\"error\":\"%s\"}", herr.Error())))
 				} else {
 					w.Write(emptyBody)
 				}
 			} else {
 				w.WriteHeader(http.StatusBadRequest)
-				w.Write([]byte(":("))
+				w.Write([]byte(fmt.Sprintf("{\"error\":\"%s\"}", umerr.Error())))
 			}
 		} else {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(":("))
+			w.Write([]byte(fmt.Sprintf("{\"error\":\"%s\"}", err.Error())))
 		}
 	})
 }
