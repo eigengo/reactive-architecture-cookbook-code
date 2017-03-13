@@ -43,29 +43,43 @@ func newEnvelopeHandler() *testEnvelopeHandler {
 
 var someError = errors.New("some error")
 
-func someEnvelope() io.Reader {
+func postSession(body io.Reader, handler *testEnvelopeHandler) *http.Response {
+	rw := httptest.NewRecorder()
+	rq := httptest.NewRequest("POST", "/session", body)
+	PostSessionHandler(*handler).ServeHTTP(rw, rq)
+	return rw.Result()
+}
+
+func newEnvelopeReader() io.Reader {
 	var e p.Envelope
 	b, _ := proto.Marshal(&e)
 	return bytes.NewReader(b)
 }
 
 func TestPostSessionHandlerNoProtobuf(t *testing.T) {
-	rw := httptest.NewRecorder()
-	rq := httptest.NewRequest("POST", "/session", strings.NewReader("(not-protobuf)"))
-	h := newEnvelopeHandler()
-	PostSessionHandler(*h).ServeHTTP(rw, rq)
-
-	if rw.Result().StatusCode != http.StatusBadRequest {
+	res := postSession(strings.NewReader("(not-protobuf"), newEnvelopeHandler())
+	if res.StatusCode != http.StatusBadRequest {
 		t.Fail()
 	}
 }
 
 func TestPostSessionHandlerOK(t *testing.T) {
-	rw := httptest.NewRecorder()
-	rq := httptest.NewRequest("POST", "/session", someEnvelope())
-	PostSessionHandler(*newEnvelopeHandler()).ServeHTTP(rw, rq)
+	res := postSession(newEnvelopeReader(), newEnvelopeHandler())
+	if res.StatusCode != http.StatusOK {
+		t.Fail()
+	}
+}
 
-	if rw.Result().StatusCode != http.StatusOK {
+func TestPostSessionHandlerWithFailedValidation(t *testing.T) {
+	res := postSession(newEnvelopeReader(), newEnvelopeHandler().withValidationError(someError))
+	if res.StatusCode != http.StatusBadRequest {
+		t.Fail()
+	}
+}
+
+func TestPostSessionHandlerWithFailedHandle(t *testing.T) {
+	res := postSession(newEnvelopeReader(), newEnvelopeHandler().withHandleError(someError))
+	if res.StatusCode != http.StatusInternalServerError {
 		t.Fail()
 	}
 }

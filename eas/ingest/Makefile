@@ -27,7 +27,7 @@ get:
 	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go get .
 
 test:
-	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test .
+	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test . -v
 
 
 clean:
