@@ -8,6 +8,8 @@ GOFILES=$(wildcard *.go)
 GONAME=$(shell basename "$(PWD)")
 PID=/tmp/go-$(GONAME).pid
 
+PACKAGES=$(shell find src -type f -name "*.go" -exec dirname {} \; | sed 's|src/||' | sort | uniq)
+
 PROTODIR=../protocol
 PROTOFILES=$(shell find $(PROTODIR) -type f -name '*.proto')
 
