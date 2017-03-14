@@ -16,10 +16,3 @@ func TestEnvelopeHandlerFunc_Handle(t *testing.T) {
 		t.Fail()
 	}
 }
-
-func TestEnvelopeHandlerFunc_Validate(t *testing.T) {
-	var e protocol.Envelope
-	if f.Validate(&e) != nil {
-		t.Fail()
-	}
-}

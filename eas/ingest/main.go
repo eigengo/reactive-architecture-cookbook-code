@@ -46,7 +46,8 @@ func main() {
 	r := mux.NewRouter()
 
 	if handler, err := cassandra.NewPersistSessionEnvelopeHandler(":aa"); err == nil {
-		r.Handle("/session", ingest.PostSessionHandler(handler)).
+		processor := ingest.NewEnvelopeProcessor(ingest.SessionEnvelopeValidator, handler)
+		r.Handle("/session", ingest.PostSessionHandler(processor)).
 			Methods("POST").
 			Headers("Content-Type", "application/x-protobuf")
 

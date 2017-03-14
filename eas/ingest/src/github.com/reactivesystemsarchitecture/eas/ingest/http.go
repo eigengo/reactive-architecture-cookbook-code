@@ -9,17 +9,17 @@ import (
 	p "github.com/reactivesystemsarchitecture/eas/protocol"
 )
 
-func PostSessionHandler(envelopeHandler EnvelopeHandler) http.Handler {
+func PostSessionHandler(envelopeProcessor EnvelopeProcessor) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
 		if body, err := ioutil.ReadAll(r.Body); err == nil {
 			var envelope p.Envelope
 			if umerr := proto.Unmarshal(body, &envelope); umerr == nil {
-				if herr := envelopeHandler.Validate(&envelope); herr != nil {
+				if herr := envelopeProcessor.Validate(&envelope); herr != nil {
 					w.WriteHeader(http.StatusBadRequest)
 					w.Write([]byte(fmt.Sprintf("{\"error\":\"%s\"}", herr.Error())))
-				} else if herr := envelopeHandler.Handle(&envelope); herr != nil {
+				} else if herr := envelopeProcessor.Handle(&envelope); herr != nil {
 					w.WriteHeader(http.StatusInternalServerError)
 					w.Write([]byte(fmt.Sprintf("{\"error\":\"%s\"}", herr.Error())))
 				} else {
