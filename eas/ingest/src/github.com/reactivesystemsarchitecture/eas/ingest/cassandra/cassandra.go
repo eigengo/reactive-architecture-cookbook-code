@@ -11,11 +11,11 @@ import (
 	"github.com/gocql/gocql"
 )
 
-type envelopeHandler struct {
+type sessionEnvelopeHandler struct {
 	clusterConfig *gocql.ClusterConfig
 }
 
-func (c *envelopeHandler) Handle(envelope *p.Envelope) error {
+func (c *sessionEnvelopeHandler) Handle(envelope *p.Envelope) error {
 	var session ps.Session
 	if err := c.Validate(envelope); err != nil {
 		return err
@@ -29,7 +29,7 @@ func (c *envelopeHandler) Handle(envelope *p.Envelope) error {
 	return nil
 }
 
-func (c *envelopeHandler) Validate(envelope *p.Envelope) error {
+func (c *sessionEnvelopeHandler) Validate(envelope *p.Envelope) error {
 	var session ps.Session
 	if envelope.Payload == nil {
 		return errors.New("envelope.Payload == nil")
@@ -41,7 +41,7 @@ func (c *envelopeHandler) Validate(envelope *p.Envelope) error {
 	return nil
 }
 
-func NewEnvelopeHandler(hosts ...string) (ingest.EnvelopeHandler, error) {
+func NewPersistSessionEnvelopeHandler(hosts ...string) (ingest.EnvelopeHandler, error) {
 	if len(hosts) == 0 {
 		return nil, errors.New("No hosts supplied")
 	}
@@ -49,7 +49,7 @@ func NewEnvelopeHandler(hosts ...string) (ingest.EnvelopeHandler, error) {
 	clusterConfig.Keyspace = "eas"
 	clusterConfig.Consistency = gocql.Quorum
 
-	return &envelopeHandler{
+	return &sessionEnvelopeHandler{
 		clusterConfig: clusterConfig,
 	}, nil
 }
