@@ -4,12 +4,8 @@ import (
 	"flag"
 	"net/http"
 	"github.com/gorilla/mux"
-	p "github.com/reactivesystemsarchitecture/eas/protocol"
 	"github.com/reactivesystemsarchitecture/eas/ingest"
-	"github.com/golang/protobuf/proto"
-	"io/ioutil"
 	"log"
-	"fmt"
 	"github.com/reactivesystemsarchitecture/eas/ingest/cassandra"
 )
 
@@ -50,7 +46,7 @@ func main() {
 	r := mux.NewRouter()
 
 	if handler, err := cassandra.NewEnvelopeHandler(":aa"); err == nil {
-		r.Handle("/session", PostSessionHandler(handler)).
+		r.Handle("/session", ingest.PostSessionHandler(handler)).
 			Methods("POST").
 			Headers("Content-Type", "application/x-protobuf")
 
@@ -61,35 +57,3 @@ func main() {
 	}
 
 }
-
-func PostSessionHandler(envelopeHandler ingest.EnvelopeHandler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-
-		if body, err := ioutil.ReadAll(r.Body); err == nil {
-			var envelope p.Envelope
-			if umerr := proto.Unmarshal(body, &envelope); umerr == nil {
-				if herr := envelopeHandler.Validate(&envelope); herr != nil {
-					w.WriteHeader(http.StatusBadRequest)
-					w.Write([]byte(fmt.Sprintf("{\"error\":\"%s\"}", herr.Error())))
-				} else if herr := envelopeHandler.Handle(&envelope); herr != nil {
-					w.WriteHeader(http.StatusInternalServerError)
-					w.Write([]byte(fmt.Sprintf("{\"error\":\"%s\"}", herr.Error())))
-				} else {
-					w.Write([]byte("{}"))
-				}
-			} else {
-				w.WriteHeader(http.StatusBadRequest)
-				w.Write([]byte(fmt.Sprintf("{\"error\":\"%s\"}", umerr.Error())))
-			}
-		} else {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(fmt.Sprintf("{\"error\":\"%s\"}", err.Error())))
-		}
-	})
-}
-
-var NotImplemented = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-	w.Write([]byte("Not Implemented"))
-})

@@ -27,7 +27,8 @@ get:
 	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go get .
 
 test:
-	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test . -v -covermode=atomic -o bin/test -coverprofile=bin/cover.out
+	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test github.com/reactivesystemsarchitecture/eas/ingest -v -covermode=atomic -o bin/test -coverprofile=bin/cover.out
+	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go tool cover --html bin/cover.out
 
 
 clean:
@@ -36,4 +37,4 @@ clean:
 	@rm -rf $(VNDGOPATH)
 	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go clean
 
-.PHONY: build get install run watch start stop restart clean protoc
+.PHONY: build get clean protoc

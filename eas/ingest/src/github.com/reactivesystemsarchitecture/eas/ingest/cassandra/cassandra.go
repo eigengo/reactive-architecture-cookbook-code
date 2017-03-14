@@ -16,7 +16,6 @@ type envelopeHandler struct {
 }
 
 func (c *envelopeHandler) Handle(envelope *p.Envelope) error {
-
 	var session ps.Session
 	if err := c.Validate(envelope); err != nil {
 		return err
