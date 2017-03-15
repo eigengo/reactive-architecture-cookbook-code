@@ -7,11 +7,33 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var f = EnvelopeHandlerFunc(func(_ *protocol.Envelope) error {
-	return errors.New("bab")
-})
+func h(err error) EnvelopeHandlerFunc {
+	return EnvelopeHandlerFunc(func(_ *protocol.Envelope) error {
+		return err
+	})
+}
+
+func v(err error) EnvelopeValidatorFunc {
+	return EnvelopeValidatorFunc(func(_ *protocol.Envelope) error {
+		return err
+	})
+}
 
 func TestEnvelopeHandlerFunc_Handle(t *testing.T) {
 	var e protocol.Envelope
-	assert.EqualError(t, f.Handle(&e), "bab")
+	err := errors.New("kushadfkjasdf")
+	assert.EqualError(t, h(err).Handle(&e), err.Error())
+}
+
+func TestEnvelopeValidatorFunc_Validate(t *testing.T) {
+	var e protocol.Envelope
+	err := errors.New("nanananananananana Batman!")
+	assert.EqualError(t, v(err).Validate(&e), err.Error())
+}
+
+func TestNewEnvelopeProcessor(t *testing.T) {
+	var e protocol.Envelope
+	p := NewEnvelopeProcessor(v(nil), h(nil))
+	assert.Nil(t, p.Handle(&e))
+	assert.Nil(t, p.Validate(&e))
 }
