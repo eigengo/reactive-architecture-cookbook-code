@@ -5,13 +5,14 @@ import (
 	ps "github.com/reactivesystemsarchitecture/eas/protocol/session/v1m0"
 
 	"github.com/golang/protobuf/ptypes"
+	"github.com/google/uuid"
 	"fmt"
 )
 
 const (
 	ValidationErrorNilPayload             int = iota
 	ValidationErrorPayloadNotSession
-	ValidationErrorEmptySessionId
+	ValidationErrorInvalidSessionId
 	ValidationErrorEmptySensorData
 	ValidationErrorEmptySensorDataValues
 	ValidationErrorEmptySensors
@@ -37,8 +38,8 @@ var SessionEnvelopeValidator EnvelopeValidator = EnvelopeValidatorFunc(func(enve
 	}
 	ptypes.UnmarshalAny(envelope.Payload, &session)
 
-	if len(session.SessionId) == 0 {
-		return &ValidationError{code: ValidationErrorEmptySessionId}
+	if _, err := uuid.Parse(session.SessionId); err != nil {
+		return &ValidationError{code: ValidationErrorInvalidSessionId}
 	}
 	if session.SensorData == nil {
 		return &ValidationError{code: ValidationErrorEmptySensorData}

@@ -39,7 +39,7 @@ func TestSessionEnvelopeValidator_NotSession(t *testing.T) {
 
 func TestSessionEnvelopeValidator_EmptySessionId(t *testing.T) {
 	var s sp.Session
-	assertFailWithCode(t, &s, ValidationErrorEmptySessionId)
+	assertFailWithCode(t, &s, ValidationErrorInvalidSessionId)
 }
 
 func TestSessionEnvelopeValidator_EmptySessionSensorData(t *testing.T) {
@@ -87,7 +87,7 @@ func TestSessionEnvelopeValidator_Valid(t *testing.T) {
 	sd.Values = []float32{0, 1, 3, 4, 10, 11, 13}
 	sd.Sensors = []*sp.Sensor{&sn1, &sn2}
 	s.SensorData = &sd
-	s.SessionId = "abc"
+	s.SessionId = "56B56807-8336-4ED9-93A7-30AD32E3E700"
 
 	var e p.Envelope
 	a, _ := ptypes.MarshalAny(&s)

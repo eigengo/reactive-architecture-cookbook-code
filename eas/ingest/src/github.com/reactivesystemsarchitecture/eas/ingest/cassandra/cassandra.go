@@ -5,10 +5,10 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	ps "github.com/reactivesystemsarchitecture/eas/protocol/session/v1m0"
 	"github.com/reactivesystemsarchitecture/eas/ingest"
-	"log"
 	"errors"
 
 	"github.com/gocql/gocql"
+	"github.com/google/uuid"
 )
 
 type sessionEnvelopeHandler struct {
@@ -33,11 +33,11 @@ func (c *sessionEnvelopeHandler) Handle(envelope *p.Envelope) error {
 	if err := ptypes.UnmarshalAny(envelope.Payload, &session); err != nil {
 		return err
 	}
-
-
-	log.Println("Persisting", session)
-
-	return nil
+	if uuid, err := uuid.Parse(session.SessionId); err != nil {
+		return err
+	} else {
+		return c.session.Query("insert into ingested_sessions(id) values (?)", uuid.String()).Exec()
+	}
 }
 
 func NewPersistSessionEnvelopeHandler(hosts ...string) (ingest.EnvelopeHandler, error) {
