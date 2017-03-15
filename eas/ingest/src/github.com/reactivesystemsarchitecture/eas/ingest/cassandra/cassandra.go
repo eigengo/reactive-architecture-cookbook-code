@@ -15,6 +15,19 @@ type sessionEnvelopeHandler struct {
 	session *gocql.Session
 }
 
+func validateKeyspace(session *gocql.Session) error {
+	if md, err := session.KeyspaceMetadata("eas"); err == nil {
+		if _, ok := md.Tables["ingested_sessions"]; ok {
+			// TODO: Check schema version
+			return nil
+		}
+
+		return errors.New("Missing or bad schema for 'ingested_sessions'")
+	} else {
+		return err
+	}
+}
+
 func (c *sessionEnvelopeHandler) Handle(envelope *p.Envelope) error {
 	var session ps.Session
 	if err := ptypes.UnmarshalAny(envelope.Payload, &session); err != nil {
@@ -38,8 +51,12 @@ func NewPersistSessionEnvelopeHandler(hosts ...string) (ingest.EnvelopeHandler, 
 	if session, err := clusterConfig.CreateSession(); err != nil {
 		return nil, err
 	} else {
-		return &sessionEnvelopeHandler{
-			session: session,
-		}, nil
+		if err := validateKeyspace(session); err == nil {
+			return &sessionEnvelopeHandler{
+				session: session,
+			}, nil
+		} else {
+			return nil, err
+		}
 	}
 }
