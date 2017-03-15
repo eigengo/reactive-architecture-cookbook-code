@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"github.com/golang/protobuf/proto"
 	p "github.com/reactivesystemsarchitecture/eas/protocol"
+	"github.com/stretchr/testify/assert"
 )
 
 type testEnvelopeProcessor struct {
@@ -64,35 +65,25 @@ func newEnvelopeReader() io.Reader {
 
 func TestPostSessionHandlerNoProtobuf(t *testing.T) {
 	res := postSession(strings.NewReader("(not-protobuf"), newEnvelopeProcessor())
-	if res.StatusCode != http.StatusBadRequest {
-		t.Fail()
-	}
+	assert.Equal(t, res.StatusCode, http.StatusBadRequest)
 }
 
 func TestPostSessionHandlerOK(t *testing.T) {
 	res := postSession(newEnvelopeReader(), newEnvelopeProcessor())
-	if res.StatusCode != http.StatusOK {
-		t.Fail()
-	}
+	assert.Equal(t, res.StatusCode, http.StatusOK)
 }
 
 func TestPostSessionHandlerWithFailedValidation(t *testing.T) {
 	res := postSession(newEnvelopeReader(), newEnvelopeProcessor().withValidationError(someError))
-	if res.StatusCode != http.StatusBadRequest {
-		t.Fail()
-	}
+	assert.Equal(t, res.StatusCode, http.StatusBadRequest)
 }
 
 func TestPostSessionHandlerWithFailedHandle(t *testing.T) {
 	res := postSession(newEnvelopeReader(), newEnvelopeProcessor().withHandleError(someError))
-	if res.StatusCode != http.StatusInternalServerError {
-		t.Fail()
-	}
+	assert.Equal(t, res.StatusCode, http.StatusInternalServerError)
 }
 
 func TestPostSessionHandlerBrokenBody(t *testing.T) {
 	res := postSession(&brokenReader{}, newEnvelopeProcessor())
-	if res.StatusCode != http.StatusInternalServerError {
-		t.Fail()
-	}
+	assert.Equal(t, res.StatusCode, http.StatusInternalServerError)
 }

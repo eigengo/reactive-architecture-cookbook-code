@@ -26,7 +26,8 @@ protoc:
 	$(foreach p,$(PROTOFILES),PATH=$(PATH):$(VNDGOPATH)/bin protoc --go_out=$(GEN)/src $(p) -I $(PROTODIR);)
 
 get:
-	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go get .
+	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go get -t .
+	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go get -t github.com/reactivesystemsarchitecture/eas/ingest
 
 test:
 	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test github.com/reactivesystemsarchitecture/eas/ingest -v -covermode=atomic -o bin/test -coverprofile=bin/cover.out
