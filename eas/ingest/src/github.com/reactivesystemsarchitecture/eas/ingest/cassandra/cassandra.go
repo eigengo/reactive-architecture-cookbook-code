@@ -12,7 +12,7 @@ import (
 )
 
 type sessionEnvelopeHandler struct {
-	clusterConfig *gocql.ClusterConfig
+	session *gocql.Session
 }
 
 func (c *sessionEnvelopeHandler) Handle(envelope *p.Envelope) error {
@@ -20,6 +20,7 @@ func (c *sessionEnvelopeHandler) Handle(envelope *p.Envelope) error {
 	if err := ptypes.UnmarshalAny(envelope.Payload, &session); err != nil {
 		return err
 	}
+
 
 	log.Println("Persisting", session)
 
@@ -34,7 +35,11 @@ func NewPersistSessionEnvelopeHandler(hosts ...string) (ingest.EnvelopeHandler, 
 	clusterConfig.Keyspace = "eas"
 	clusterConfig.Consistency = gocql.Quorum
 
-	return &sessionEnvelopeHandler{
-		clusterConfig: clusterConfig,
-	}, nil
+	if session, err := clusterConfig.CreateSession(); err != nil {
+		return nil, err
+	} else {
+		return &sessionEnvelopeHandler{
+			session: session,
+		}, nil
+	}
 }

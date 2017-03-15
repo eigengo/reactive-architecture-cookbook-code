@@ -1,0 +1,3 @@
+FROM cassandra
+RUN mkdir /data
+COPY data/init.cql /data/
