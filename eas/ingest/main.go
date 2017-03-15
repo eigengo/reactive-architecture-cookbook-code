@@ -41,7 +41,7 @@ func main() {
 			Methods("POST").
 			Headers("Content-Type", "application/x-protobuf")
 
-		// Our application will run on port 3000. Here we declare the port and pass in our router.
+		// Our application will run on the given addr.
 		log.Fatal(http.ListenAndServe(addr, r))
 	} else {
 		log.Fatal(err)
