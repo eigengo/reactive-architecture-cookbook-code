@@ -33,6 +33,9 @@ test:
 	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test github.com/reactivesystemsarchitecture/eas/ingest -v -covermode=atomic -o bin/test -coverprofile=bin/cover.out
 	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go tool cover --html bin/cover.out
 
+itest:
+	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test github.com/reactivesystemsarchitecture/eas/ingest/cassandra -v -covermode=atomic -o bin/test-cassandra -coverprofile=bin/cover-cassandra.out
+	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go tool cover --html bin/cover-cassandra.out
 
 clean:
 	@echo "Cleaning"

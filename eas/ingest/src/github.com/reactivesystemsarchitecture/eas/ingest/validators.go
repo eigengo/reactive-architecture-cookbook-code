@@ -14,6 +14,7 @@ const (
 	ValidationErrorEmptySessionId
 	ValidationErrorEmptySensorData
 	ValidationErrorEmptySensorDataValues
+	ValidationErrorEmptySensors
 	ValidationErrorMisalignedSensorValues
 
 )
@@ -23,7 +24,7 @@ type ValidationError struct {
 }
 
 func (v *ValidationError) Error() string {
-	return fmt.Sprintf("Validation failed %d", v.code)
+	return fmt.Sprintf("{\"validation_error\":%d}", v.code)
 }
 
 var SessionEnvelopeValidator EnvelopeValidator = EnvelopeValidatorFunc(func(envelope *protocol.Envelope) error {
@@ -52,12 +53,17 @@ var SessionEnvelopeValidator EnvelopeValidator = EnvelopeValidatorFunc(func(enve
 		for _, dataType := range sensor.DataTypes {
 			switch dataType {
 			case ps.SensorDataType_Acceleration:
+				sampleSize += 3
 			case ps.SensorDataType_Rotation:
 				sampleSize += 3
 			case ps.SensorDataType_HeartRate:
 				sampleSize += 1
 			}
 		}
+	}
+
+	if sampleSize == 0 {
+		return &ValidationError{code: ValidationErrorEmptySensors}
 	}
 
 	if len(session.SensorData.Values)%sampleSize != 0 {
