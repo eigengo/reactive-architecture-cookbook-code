@@ -5,6 +5,7 @@ import (
 	p "github.com/reactivesystemsarchitecture/eas/protocol"
 	sp "github.com/reactivesystemsarchitecture/eas/protocol/session/v1m0"
 	"github.com/golang/protobuf/ptypes"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewPersistSessionEnvelopeHandler(t *testing.T) {
@@ -15,7 +16,7 @@ func TestNewPersistSessionEnvelopeHandler(t *testing.T) {
 
 	h, err := NewPersistSessionEnvelopeHandler("localhost:9092")
 	if err != nil {
-		t.Fail()
+		assert.FailNow(t, err.Error())
 	}
 	if h.Handle(&e) != nil {
 		t.Fail()
