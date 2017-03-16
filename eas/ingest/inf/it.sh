@@ -7,7 +7,7 @@ CASSANDRA_NAME=eas-it-cassandra
 docker build -f Dockerfile.it . --tag $CASSANDRA_TAG
 
 # For convenience, remove old containers
-docker ps -f "ancestor=eas-it-cassandra" -qa | xargs docker rm -fv
+docker ps -f "name=$CASSANDRA_NAME" -qa | xargs docker rm -fv
 
 # Start the built cassandra container
 docker run --name $CASSANDRA_NAME -p 9042:9042 -d $CASSANDRA_TAG
