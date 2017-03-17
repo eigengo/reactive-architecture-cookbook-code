@@ -4,23 +4,26 @@ create table eas.session_sensor_values(
   session_id UUID,
   sequence int,
   sensor_values list<float>,
+  valid boolean,
   primary key (session_id, sequence)
 ) with clustering order by (sequence asc);
 
 create table eas.session_labels(
   session_id UUID,
-  id UUID,
+  sequence int,
   start_time float,
   duration float,
   label text,
   automatic boolean,
-  primary key (session_id, automatic)
+  valid boolean,
+  primary key (session_id, automatic, sequence)
 );
 
-create table eas.session_sensor_data_sensors(
+create table eas.session_sensors(
   session_id UUID,
   sequence int,
   location int,
   data_types set<int>,
-  primary key(session_id, sequence)
+  valid boolean,
+  primary key (session_id, sequence)
 ) with clustering order by (sequence asc);
