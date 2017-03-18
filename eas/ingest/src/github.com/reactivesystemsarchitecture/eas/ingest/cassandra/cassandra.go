@@ -10,6 +10,7 @@ import (
 	"github.com/gocql/gocql"
 	"github.com/google/uuid"
 	"fmt"
+	"time"
 )
 
 type sessionEnvelopeHandler struct {
@@ -44,7 +45,7 @@ func (c *sessionEnvelopeHandler) Handle(envelope *p.Envelope) error {
 		return err
 	}
 
-	sliceSize := 16384
+	sliceSize := 32768
 	sliceCount := len(session.SensorData.Values) / sliceSize
 	insertSensorValues := c.session.Query("insert into session_sensor_values(session_id, sequence, sensor_values, valid) values (?, ?, ?, false)")
 	insertSensorValues.RetryPolicy(&gocql.SimpleRetryPolicy{NumRetries: 3})
@@ -130,6 +131,7 @@ func NewPersistSessionEnvelopeHandler(hosts ...string) (ingest.EnvelopeHandler, 
 	}
 	clusterConfig := gocql.NewCluster(hosts...)
 	clusterConfig.Keyspace = "eas"
+	clusterConfig.Timeout = 3 * time.Second
 	clusterConfig.Compressor = gocql.SnappyCompressor{}
 	clusterConfig.PoolConfig.HostSelectionPolicy = gocql.TokenAwareHostPolicy(gocql.RoundRobinHostPolicy())
 	clusterConfig.Consistency = gocql.Quorum
