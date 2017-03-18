@@ -130,6 +130,8 @@ func NewPersistSessionEnvelopeHandler(hosts ...string) (ingest.EnvelopeHandler, 
 	}
 	clusterConfig := gocql.NewCluster(hosts...)
 	clusterConfig.Keyspace = "eas"
+	clusterConfig.Compressor = gocql.SnappyCompressor{}
+	clusterConfig.PoolConfig.HostSelectionPolicy = gocql.TokenAwareHostPolicy(gocql.RoundRobinHostPolicy())
 	clusterConfig.Consistency = gocql.Quorum
 
 	if session, err := clusterConfig.CreateSession(); err != nil {

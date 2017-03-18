@@ -7,6 +7,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/google/uuid"
+	"log"
 )
 
 func newEnvelopeWithSession() p.Envelope {
@@ -37,7 +38,21 @@ func TestNewPersistSessionEnvelopeHandler(t *testing.T) {
 		assert.FailNow(t, err.Error())
 	}
 
-	if err := h.Handle(&e); err != nil {
-		assert.FailNow(t, err.Error())
+	assert.NoError(t, h.Handle(&e))
+}
+
+func BenchmarkNewPersistSessionEnvelopeHandler10(b *testing.B) {
+	log.Println(b.N)
+
+	b.StopTimer()
+	h, err := NewPersistSessionEnvelopeHandler("localhost")
+	if err != nil {
+		assert.FailNow(b, err.Error())
+	}
+
+	b.StartTimer()
+	for n := 0; n < b.N; n++ {
+		e := newEnvelopeWithSession()
+		assert.NoError(b, h.Handle(&e))
 	}
 }
