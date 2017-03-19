@@ -7,12 +7,13 @@
 //
 
 import UIKit
+import ProtocolBuffers
 
 class ViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view, typically from a nib.
+        foo()
     }
 
     override func didReceiveMemoryWarning() {
@@ -20,6 +21,14 @@ class ViewController: UIViewController {
         // Dispose of any resources that can be recreated.
     }
 
+    func foo() {
+        let s = try! Session.Builder().build()
+        Google.Protobuf.Any().
+        let e = try! Envelope.Builder().setCorrelationId("fooo").setToken("bar").build()
+        let se = e.data()
+        let e2 = try! Envelope.parseFrom(data: se)
+        print(e2)
+    }
 
 }
 

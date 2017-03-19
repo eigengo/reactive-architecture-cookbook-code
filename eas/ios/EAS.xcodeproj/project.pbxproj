@@ -787,7 +787,7 @@
 				DEVELOPMENT_TEAM = 33V7538L4A;
 				INFOPLIST_FILE = "EAS WatchKit Extension/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = com.reactivesystemsarchitecture.EAS.watchkitapp.watchkitextension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.reactivesystemsarchitecture.eas.watchkitapp.watchkitextension;
 				PRODUCT_NAME = "${TARGET_NAME}";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -805,7 +805,7 @@
 				DEVELOPMENT_TEAM = 33V7538L4A;
 				INFOPLIST_FILE = "EAS WatchKit Extension/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = com.reactivesystemsarchitecture.EAS.watchkitapp.watchkitextension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.reactivesystemsarchitecture.eas.watchkitapp.watchkitextension;
 				PRODUCT_NAME = "${TARGET_NAME}";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -824,7 +824,7 @@
 				DEVELOPMENT_TEAM = 33V7538L4A;
 				IBSC_MODULE = EAS_WatchKit_Extension;
 				INFOPLIST_FILE = "EAS WatchKit App/Info.plist";
-				PRODUCT_BUNDLE_IDENTIFIER = com.reactivesystemsarchitecture.EAS.watchkitapp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.reactivesystemsarchitecture.eas.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -843,7 +843,7 @@
 				DEVELOPMENT_TEAM = 33V7538L4A;
 				IBSC_MODULE = EAS_WatchKit_Extension;
 				INFOPLIST_FILE = "EAS WatchKit App/Info.plist";
-				PRODUCT_BUNDLE_IDENTIFIER = com.reactivesystemsarchitecture.EAS.watchkitapp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.reactivesystemsarchitecture.eas.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
