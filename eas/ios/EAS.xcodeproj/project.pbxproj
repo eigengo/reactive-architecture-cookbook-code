@@ -26,6 +26,7 @@
 		546981951E7ED734008120D9 /* ExtensionDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 546981941E7ED734008120D9 /* ExtensionDelegate.swift */; };
 		546981971E7ED734008120D9 /* NotificationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 546981961E7ED734008120D9 /* NotificationController.swift */; };
 		546981991E7ED734008120D9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 546981981E7ED734008120D9 /* Assets.xcassets */; };
+		E0E1057392B2DB61DA926EFF /* AnyExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0E10022B7D9680CFF386D14 /* AnyExtension.swift */; };
 		E882287556D944DD5BD34D45 /* Pods_EAS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FCDD627A223D1EED20285F5E /* Pods_EAS.framework */; };
 /* End PBXBuildFile section */
 
@@ -112,6 +113,7 @@
 		95D75C8C5F74FFB66C6A7A4B /* Pods-EAS WatchKit Extension.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EAS WatchKit Extension.debug.xcconfig"; path = "Pods/Target Support Files/Pods-EAS WatchKit Extension/Pods-EAS WatchKit Extension.debug.xcconfig"; sourceTree = "<group>"; };
 		CA73613AEC6E9D5542B0EB6D /* Pods-EAS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EAS.debug.xcconfig"; path = "Pods/Target Support Files/Pods-EAS/Pods-EAS.debug.xcconfig"; sourceTree = "<group>"; };
 		CF9CD7A1E001D67EEA14F59B /* Pods-EAS WatchKit App.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EAS WatchKit App.release.xcconfig"; path = "Pods/Target Support Files/Pods-EAS WatchKit App/Pods-EAS WatchKit App.release.xcconfig"; sourceTree = "<group>"; };
+		E0E10022B7D9680CFF386D14 /* AnyExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnyExtension.swift; sourceTree = "<group>"; };
 		F7A7442191AD5A5F41CF3EA9 /* Pods-EASTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EASTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-EASTests/Pods-EASTests.debug.xcconfig"; sourceTree = "<group>"; };
 		FCDD627A223D1EED20285F5E /* Pods_EAS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_EAS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -172,6 +174,7 @@
 			children = (
 				54289FAA1E7ED83F0024225C /* Envelope.proto.swift */,
 				54289FAB1E7ED83F0024225C /* Session.proto.swift */,
+				E0E10022B7D9680CFF386D14 /* AnyExtension.swift */,
 			);
 			name = "EAS Protocol";
 			sourceTree = "<group>";
@@ -619,6 +622,7 @@
 				546981651E7ED734008120D9 /* ViewController.swift in Sources */,
 				54289FAC1E7ED83F0024225C /* Envelope.proto.swift in Sources */,
 				546981631E7ED734008120D9 /* AppDelegate.swift in Sources */,
+				E0E1057392B2DB61DA926EFF /* AnyExtension.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

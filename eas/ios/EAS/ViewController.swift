@@ -22,12 +22,13 @@ class ViewController: UIViewController {
     }
 
     func foo() {
-        let s = try! Session.Builder().build()
-        Google.Protobuf.Any().
-        let e = try! Envelope.Builder().setCorrelationId("fooo").setToken("bar").build()
+        let s = try! Session.Builder().setSessionId("sid").build()
+        let e = try! Envelope.Builder().setCorrelationId("fooo").setToken("bar").setPayload(s.any()).build()
         let se = e.data()
         let e2 = try! Envelope.parseFrom(data: se)
         print(e2)
+        let s2: Session = try! e2.payload.uas()
+        print(s2)
     }
 
 }
