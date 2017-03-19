@@ -1,5 +1,5 @@
 syntax = "proto3";
-package com.reactivesystemsarchitecture;
+//package com.reactivesystemsarchitecture;
 option go_package = "github.com/reactivesystemsarchitecture/eas/protocol";
 
 import "google/protobuf/any.proto";
