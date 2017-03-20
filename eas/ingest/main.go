@@ -27,7 +27,7 @@ func main() {
 	flag.StringVar(&addr, "addr", ":8080", "The address to bind to")
 
 	if len(cassandraHosts) == 0 {
-
+		cassandraHosts = stringsValue{"localhost"}
 	}
 
 	flag.Parse()

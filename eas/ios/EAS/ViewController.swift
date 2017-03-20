@@ -22,13 +22,17 @@ class ViewController: UIViewController {
     }
 
     func foo() {
-        let s = try! Session.Builder().setSessionId("sid").build()
-        let e = try! Envelope.Builder().setCorrelationId("fooo").setToken("bar").setPayload(s.any()).build()
-        let se = e.data()
-        let e2 = try! Envelope.parseFrom(data: se)
-        print(e2)
-        let s2: Session = try! e2.payload.uas()
-        print(s2)
+        let cs = ClientSession(url: URL(string: "http://localhost:8080/session")!, token: Data())
+        let sensor = try! Sensor.Builder().setLocation(SensorLocation.wrist).setDataTypes([SensorDataType.acceleration]).build()
+        let values = [Float32](repeating: 9, count: 3600 * 50 * 3)
+        let sensorData = try! SensorData.Builder().setSensors([sensor]).setValues(values).build()
+        let s = try! Session.Builder().setSessionId(UUID().uuidString).setSensorData(sensorData).build()
+
+        cs.upload(session: s) { data, response, error in
+            if let data = data, let s = String(data: data, encoding: .utf8) { print("data = ", s) }
+            if let response = response { print("response = ", response) }
+            if let error = error { print("error = ", error) }
+        }
     }
 
 }
