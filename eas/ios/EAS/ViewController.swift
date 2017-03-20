@@ -24,7 +24,7 @@ class ViewController: UIViewController {
     func foo() {
         let cs = ClientSession(url: URL(string: "http://localhost:8080/session")!, token: Data())
         let sensor = try! Sensor.Builder().setLocation(SensorLocation.wrist).setDataTypes([SensorDataType.acceleration]).build()
-        let values = [Float32](repeating: 9, count: 3600 * 50 * 3)
+        let values = [Float32](repeating: 0.987, count: 3600 * 50 * 3)
         let sensorData = try! SensorData.Builder().setSensors([sensor]).setValues(values).build()
         let s = try! Session.Builder().setSessionId(UUID().uuidString).setSensorData(sensorData).build()
 
