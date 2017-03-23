@@ -26,8 +26,12 @@
 		546981951E7ED734008120D9 /* ExtensionDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 546981941E7ED734008120D9 /* ExtensionDelegate.swift */; };
 		546981971E7ED734008120D9 /* NotificationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 546981961E7ED734008120D9 /* NotificationController.swift */; };
 		546981991E7ED734008120D9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 546981981E7ED734008120D9 /* Assets.xcassets */; };
+		E0E101E5B0063DC26E162192 /* Types.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0E103282088DE8BDE544B33 /* Types.swift */; };
+		E0E103DF2BBCCA554D563912 /* NaiveClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0E10B8D185CF771865E4D1B /* NaiveClassifier.swift */; };
 		E0E10B4094274FC003748165 /* AnyExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0E1036AC29D0AFDFD350E6F /* AnyExtension.swift */; };
 		E0E10C11979C7EE245B2F920 /* ClientSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0E10CF8616E5C4F55C56ABF /* ClientSession.swift */; };
+		E0E10CA2BBDFE86BB4683826 /* Classifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0E1017BEC58D07B8953D693 /* Classifier.swift */; };
+		E0E10FDF5AC87CDD5BE4DD83 /* SignalAnalysis.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0E10F3F458699224A820466 /* SignalAnalysis.swift */; };
 		E882287556D944DD5BD34D45 /* Pods_EAS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FCDD627A223D1EED20285F5E /* Pods_EAS.framework */; };
 /* End PBXBuildFile section */
 
@@ -114,8 +118,12 @@
 		95D75C8C5F74FFB66C6A7A4B /* Pods-EAS WatchKit Extension.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EAS WatchKit Extension.debug.xcconfig"; path = "Pods/Target Support Files/Pods-EAS WatchKit Extension/Pods-EAS WatchKit Extension.debug.xcconfig"; sourceTree = "<group>"; };
 		CA73613AEC6E9D5542B0EB6D /* Pods-EAS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EAS.debug.xcconfig"; path = "Pods/Target Support Files/Pods-EAS/Pods-EAS.debug.xcconfig"; sourceTree = "<group>"; };
 		CF9CD7A1E001D67EEA14F59B /* Pods-EAS WatchKit App.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EAS WatchKit App.release.xcconfig"; path = "Pods/Target Support Files/Pods-EAS WatchKit App/Pods-EAS WatchKit App.release.xcconfig"; sourceTree = "<group>"; };
+		E0E1017BEC58D07B8953D693 /* Classifier.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Classifier.swift; sourceTree = "<group>"; };
+		E0E103282088DE8BDE544B33 /* Types.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Types.swift; sourceTree = "<group>"; };
 		E0E1036AC29D0AFDFD350E6F /* AnyExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = AnyExtension.swift; path = "EAS Protocol/AnyExtension.swift"; sourceTree = "<group>"; };
+		E0E10B8D185CF771865E4D1B /* NaiveClassifier.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NaiveClassifier.swift; sourceTree = "<group>"; };
 		E0E10CF8616E5C4F55C56ABF /* ClientSession.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ClientSession.swift; sourceTree = "<group>"; };
+		E0E10F3F458699224A820466 /* SignalAnalysis.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SignalAnalysis.swift; sourceTree = "<group>"; };
 		F7A7442191AD5A5F41CF3EA9 /* Pods-EASTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EASTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-EASTests/Pods-EASTests.debug.xcconfig"; sourceTree = "<group>"; };
 		FCDD627A223D1EED20285F5E /* Pods_EAS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_EAS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -216,6 +224,7 @@
 				5469816B1E7ED734008120D9 /* LaunchScreen.storyboard */,
 				5469816E1E7ED734008120D9 /* Info.plist */,
 				E0E10CF8616E5C4F55C56ABF /* ClientSession.swift */,
+				E0E100F194648995378F41C1 /* Classification */,
 			);
 			path = EAS;
 			sourceTree = "<group>";
@@ -269,6 +278,17 @@
 				4F5E90DA2036779F39465E9C /* Pods_EASTests.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		E0E100F194648995378F41C1 /* Classification */ = {
+			isa = PBXGroup;
+			children = (
+				E0E10F3F458699224A820466 /* SignalAnalysis.swift */,
+				E0E103282088DE8BDE544B33 /* Types.swift */,
+				E0E1017BEC58D07B8953D693 /* Classifier.swift */,
+				E0E10B8D185CF771865E4D1B /* NaiveClassifier.swift */,
+			);
+			path = Classification;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -627,6 +647,10 @@
 				546981631E7ED734008120D9 /* AppDelegate.swift in Sources */,
 				E0E10C11979C7EE245B2F920 /* ClientSession.swift in Sources */,
 				E0E10B4094274FC003748165 /* AnyExtension.swift in Sources */,
+				E0E10FDF5AC87CDD5BE4DD83 /* SignalAnalysis.swift in Sources */,
+				E0E101E5B0063DC26E162192 /* Types.swift in Sources */,
+				E0E10CA2BBDFE86BB4683826 /* Classifier.swift in Sources */,
+				E0E103DF2BBCCA554D563912 /* NaiveClassifier.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
