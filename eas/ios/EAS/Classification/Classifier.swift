@@ -1,7 +1,7 @@
 import Foundation
 
-protocol Classifier {
+protocol ExerciseClassifier {
 
-    func classify(sensors: Matrix) -> String?
+    func classify(matrix: Matrix) -> String?
 
 }

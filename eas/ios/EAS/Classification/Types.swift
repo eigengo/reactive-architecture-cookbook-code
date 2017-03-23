@@ -1,4 +1,9 @@
-
 import Foundation
 
-typealias Matrix = Array<Float>
+struct Matrix {
+
+    func flatten() -> Array<Float> {
+        return []
+    }
+
+}
