@@ -22,3 +22,4 @@ extension ProtocolBuffers.GeneratedMessage {
     }
 
 }
+
