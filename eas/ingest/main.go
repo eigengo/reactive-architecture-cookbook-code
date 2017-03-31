@@ -7,6 +7,10 @@ import (
 	"github.com/reactivesystemsarchitecture/eas/ingest"
 	"log"
 	"github.com/reactivesystemsarchitecture/eas/ingest/cassandra"
+	"strings"
+	"compress/gzip"
+	"io"
+	"github.com/stretchr/testify/require"
 )
 
 type stringsValue []string
@@ -37,6 +41,7 @@ func main() {
 
 	if handler, err := cassandra.NewPersistSessionEnvelopeHandler(cassandraHosts...); err == nil {
 		processor := ingest.NewEnvelopeProcessor(ingest.SessionEnvelopeValidator, handler)
+
 		r.Handle("/session", ingest.PostSessionHandler(processor)).
 			Methods("POST").
 			Headers("Content-Type", "application/x-protobuf")

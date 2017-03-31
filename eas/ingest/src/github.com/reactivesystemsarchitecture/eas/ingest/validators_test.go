@@ -44,7 +44,7 @@ func TestSessionEnvelopeValidator_EmptySessionId(t *testing.T) {
 
 func TestSessionEnvelopeValidator_EmptySessionSensorData(t *testing.T) {
 	var s sp.Session
-	s.SessionId = "abc"
+	s.SessionId = "56B56807-8336-4ED9-93A7-30AD32E3E700"
 	assertFailWithCode(t, &s, ValidationErrorEmptySensorData)
 }
 
@@ -52,7 +52,7 @@ func TestSessionEnvelopeValidator_EmptySessionSensorDataValues(t *testing.T) {
 	var s sp.Session
 	var sd sp.SensorData
 	s.SensorData = &sd
-	s.SessionId = "abc"
+	s.SessionId = "56B56807-8336-4ED9-93A7-30AD32E3E700"
 	assertFailWithCode(t, &s, ValidationErrorEmptySensorDataValues)
 }
 
@@ -62,7 +62,7 @@ func TestSessionEnvelopeValidator_EmptySessionSensors(t *testing.T) {
 	sd.Values = []float32{0}
 	sd.Sensors = []*sp.Sensor{}
 	s.SensorData = &sd
-	s.SessionId = "abc"
+	s.SessionId = "56B56807-8336-4ED9-93A7-30AD32E3E700"
 	assertFailWithCode(t, &s, ValidationErrorEmptySensors)
 }
 
@@ -74,7 +74,7 @@ func TestSessionEnvelopeValidator_MisalignedSensorValues(t *testing.T) {
 	sd.Values = []float32{0, 1}
 	sd.Sensors = []*sp.Sensor{&sn}
 	s.SensorData = &sd
-	s.SessionId = "abc"
+	s.SessionId = "56B56807-8336-4ED9-93A7-30AD32E3E700"
 	assertFailWithCode(t, &s, ValidationErrorMisalignedSensorValues)
 }
 

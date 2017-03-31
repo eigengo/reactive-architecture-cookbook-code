@@ -7,13 +7,27 @@ import (
 	"fmt"
 
 	p "github.com/reactivesystemsarchitecture/eas/protocol"
+	"io"
+	"strings"
+	"compress/gzip"
 )
 
 func PostSessionHandler(envelopeProcessor EnvelopeProcessor) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+		var bodyReader io.Reader
+		if !strings.Contains(r.Header.Get("Transfer-Encoding"), "gzip") {
+			bodyReader = r.Body
+		} else {
+			if r, err := gzip.NewReader(r.Body); err == nil {
+				bodyReader = r
+			} else {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte(fmt.Sprintf("{\"error\":\"%s\"}", err.Error())))
+			}
+		}
 
-		if body, err := ioutil.ReadAll(r.Body); err == nil {
+		if body, err := ioutil.ReadAll(bodyReader); err == nil {
 			var envelope p.Envelope
 			if umerr := proto.Unmarshal(body, &envelope); umerr == nil {
 				if herr := envelopeProcessor.Validate(&envelope); herr != nil {

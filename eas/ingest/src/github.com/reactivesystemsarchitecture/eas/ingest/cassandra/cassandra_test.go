@@ -8,6 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/google/uuid"
 	"log"
+	"github.com/golang/protobuf/proto"
+	"compress/gzip"
+	"bytes"
+	"math/rand"
 )
 
 func newEnvelopeWithSession() p.Envelope {
@@ -15,10 +19,15 @@ func newEnvelopeWithSession() p.Envelope {
 	var sd sp.SensorData
 	var sn1, sn2 sp.Sensor
 	count := 50 * 3600
-	sn1.DataTypes = []sp.SensorDataType{sp.SensorDataType_Acceleration, sp.SensorDataType_HeartRate}
-	sn2.DataTypes = []sp.SensorDataType{sp.SensorDataType_Rotation}
+	sn1.DataTypes = []sp.SensorDataType{sp.SensorDataType_Acceleration, sp.SensorDataType_Rotation, sp.SensorDataType_HeartRate}
+	sn2.DataTypes = []sp.SensorDataType{sp.SensorDataType_Acceleration}
 
-	sd.Values = make([]float32, count * 7, count * 7)
+	sampleCount := count * 10
+	sd.Values = make([]float32, sampleCount, sampleCount)
+	for i := 0; i < sampleCount; i++ {
+		sd.Values[i] = rand.Float32()
+	}
+
 	sd.Sensors = []*sp.Sensor{&sn1, &sn2}
 	s.SensorData = &sd
 	sessionId, _ := uuid.NewRandom()
