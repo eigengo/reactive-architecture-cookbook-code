@@ -7,10 +7,6 @@ import (
 	"github.com/reactivesystemsarchitecture/eas/ingest"
 	"log"
 	"github.com/reactivesystemsarchitecture/eas/ingest/cassandra"
-	"strings"
-	"compress/gzip"
-	"io"
-	"github.com/stretchr/testify/require"
 )
 
 type stringsValue []string
