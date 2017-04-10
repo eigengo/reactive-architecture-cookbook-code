@@ -1,5 +1,6 @@
 package com.reactivearchitecturecookbook.push
 
+import java.nio.ByteBuffer
 import java.nio.file.{Files, Paths}
 import java.security.KeyFactory
 import java.security.spec.PKCS8EncodedKeySpec
@@ -7,9 +8,12 @@ import java.util.UUID
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.HttpRequest
+import akka.http.scaladsl.model._
+import akka.http.scaladsl.server.{RejectionError, UnsupportedRequestContentTypeRejection}
+import akka.http.scaladsl.util.FastFuture
 import akka.stream.ActorMaterializer
 import cakesolutions.kafka.{KafkaProducer, KafkaProducerRecord, KafkaSerializer}
+import com.google.protobuf.ByteString
 import com.nimbusds.jose.crypto.RSADecrypter
 import com.nimbusds.jwt.{EncryptedJWT, JWTClaimsSet}
 import com.reactivearchitecturecookbook.Envelope
@@ -53,7 +57,23 @@ object Main extends App with IngestRoute {
   }
 
   override def extractIngestImage(request: HttpRequest)(implicit ec: ExecutionContext): Future[IngestedImage] = {
-    Future(IngestedImage())
+    def validate(contentType: ContentType)(entity: HttpEntity.Strict): Future[IngestedImage] = {
+      val image = IngestedImage(contentType.mediaType.value, ByteString.copyFrom(entity.data.asByteBuffer))
+      // TODO: validate
+      FastFuture.successful(image)
+    }
+
+    import scala.concurrent.duration._
+    val supported = Set(ContentTypeRange(mediaRange = MediaRanges.`image/*`))
+
+    request.header[akka.http.scaladsl.model.headers.`Content-Type`]
+      .filter(ct ⇒ supported.exists(_.matches(ct.contentType)))
+      .map { ct ⇒
+        request.entity
+          .withSizeLimit(5L * 1024L * 1024L)
+          .toStrict(300.millis)
+          .flatMap(validate(ct.contentType))
+      }.getOrElse(FastFuture.failed(RejectionError(UnsupportedRequestContentTypeRejection(supported))))
   }
 
   override def publishIngestedImage(claimsSet: JWTClaimsSet, token: String, transactionId: String)(ingestedImage: IngestedImage)(implicit ec: ExecutionContext): Future[Unit] = {
@@ -66,5 +86,6 @@ object Main extends App with IngestRoute {
   }
 
   import system.dispatcher
+
   Http().bindAndHandle(ingestRoute, "localhost", 9000)
 }
