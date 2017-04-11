@@ -19,7 +19,7 @@ object Summary {
     override def next(envelope: Envelope): Summary = {
       if (events.size < 2) copy(events = envelope :: events)
       else {
-        val out = Envelope(events.flatMap(_.correlationIds), events.head.token, None)
+        val out = Envelope(events.head.correlationId, events.head.token, None)
         Complete(out)
       }
     }

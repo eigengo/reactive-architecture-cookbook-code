@@ -80,7 +80,7 @@ object Main extends App with IngestRoute {
     val clientId = claimsSet.getStringClaim("cid")
 
     val payload = com.google.protobuf.any.Any.pack(ingestedImage)
-    val envelope = Envelope(correlationIds = Seq(UUID.randomUUID().toString), token, Some(payload))
+    val envelope = Envelope(correlationId = UUID.randomUUID().toString, token, Some(payload))
 
     kafkaProducer.send(KafkaProducerRecord(clientId, envelope)).map(println)
   }
