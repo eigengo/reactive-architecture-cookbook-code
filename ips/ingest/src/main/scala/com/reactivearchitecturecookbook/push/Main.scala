@@ -1,6 +1,5 @@
 package com.reactivearchitecturecookbook.push
 
-import java.nio.ByteBuffer
 import java.nio.file.{Files, Paths}
 import java.security.KeyFactory
 import java.security.spec.PKCS8EncodedKeySpec
