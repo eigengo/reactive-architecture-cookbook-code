@@ -11,7 +11,7 @@ RC_GTEST_PROP(main_test, handle_extract_face, (const ingest::v1m0::IngestedImage
     ser.ParseFromString(gen.SerializeAsString());
 
     RC_ASSERT(ser.content() == gen.content());
-    RC_ASSERT(ser.mime_type() == gen.mime_type());
+    RC_ASSERT(ser.media_type() == gen.media_type());
 
-    std::cout << "mime_type = " << gen.mime_type() << ", content = " << gen.content() << std::endl;
+    std::cout << "mime_type = " << gen.media_type() << ", content = " << gen.content() << std::endl;
 }
