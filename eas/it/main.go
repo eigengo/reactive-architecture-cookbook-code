@@ -31,9 +31,6 @@ var sensorsRegexp *regexp.Regexp = regexp.MustCompile(`\W+((\w+)->\[([^]]+)])+`)
 func readSensors(r *bufio.Scanner) (sensors []*v1m0.Sensor, err error) {
 	if r.Scan() {
 		line := r.Text()
-		println(line)
-		fmt.Println(sensorsRegexp.FindString(line))
-		fmt.Println(sensorsRegexp.FindAllString(line, 0))
 		for _, groups := range sensorsRegexp.FindAllStringSubmatch(line, 0) {
 			var s v1m0.Sensor
 
@@ -136,4 +133,9 @@ func main() {
 	} else {
 		fmt.Println(err)
 	}
+
+	line := "Wrist->[Acceleration]"
+	fmt.Println(sensorsRegexp.FindString(line))
+	fmt.Println(sensorsRegexp.FindAllString(line, 0))
+
 }
