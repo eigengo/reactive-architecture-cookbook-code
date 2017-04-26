@@ -16,6 +16,11 @@ import (
 	"math/rand"
 	"reflect"
 	"github.com/google/uuid"
+	"math"
+	"log"
+	"net/http"
+	"github.com/golang/protobuf/proto"
+	"bytes"
 )
 
 // An alias for function that decides whether to accept a label given its name
@@ -112,6 +117,9 @@ func (b *sessionBuilder) appendData(data *labelledSensorData) error {
 		rd := time.Duration((b.restFactor*(1+rand.Float64()/10))*ed.Seconds()) * time.Second
 		d := sensorDataDuration(b.values, b.sensors)
 
+		log.Printf("Appending data of duration %.fs\n", ed.Seconds())
+		log.Printf("Appending rest of duration %.fs\n", rd.Seconds())
+
 		restValues := emptyValues(b.sensors, rd)
 		label := v1m0.Label{
 			StartTime: d.Seconds(),
@@ -135,18 +143,22 @@ func (b *sessionBuilder) build() *v1m0.Session {
 	}
 	return &v1m0.Session{
 		SessionId:       uuid.New().String(),
-		UserLabels:      []*v1m0.Label{},
+		UserLabels:      b.labels,
 		AutomaticLabels: b.labels,
 		SensorData:      &sensorData,
 	}
 }
 
-var sensorsRegexp *regexp.Regexp = regexp.MustCompile(`\W+((\w+)->\[([^]]+)])+`)
+var sensorsRegexp *regexp.Regexp = regexp.MustCompile("\\W+((\\w+)->\\[([^]]+)])+")
 
 func readSensors(r *bufio.Scanner) (sensors []*v1m0.Sensor, err error) {
 	if r.Scan() {
 		line := r.Text()
-		for _, groups := range sensorsRegexp.FindAllStringSubmatch(line, 0) {
+		matches := sensorsRegexp.FindAllStringSubmatch(line, math.MaxInt32)
+		if len(matches) == 0 {
+			return nil, fmt.Errorf("'%s' is not a sensor definition", line)
+		}
+		for _, groups := range matches {
 			var s v1m0.Sensor
 
 			if l, ok := v1m0.SensorLocation_value[groups[2]]; ok {
@@ -198,8 +210,10 @@ func readDataFilesIn(dirname string, acceptLabel acceptLabel) (sd []labelledSens
 					return nil, err
 				}
 			} else if path.Ext(entry.Name()) == ".csv" {
+				log.Printf("Reading %s\n", entry.Name())
 				label := path.Base(dirname)
 				if !acceptLabel(label) {
+					log.Printf("Skipping label %s\n", label)
 					continue
 				}
 
@@ -221,6 +235,8 @@ func readDataFilesIn(dirname string, acceptLabel acceptLabel) (sd []labelledSens
 						},
 						label: label,
 					})
+
+					log.Printf("Read label '%s' for %s", label, sensors)
 				}
 			}
 
@@ -248,9 +264,13 @@ func newSession(dirname string, acceptLabel acceptLabel) (*v1m0.Session, error) 
 	return builder.build(), nil
 }
 
-//func (s *session)toRequest(url string) http.Request {
-//	// http.NewRequest("POST", url, body)
-//}
+func newRequest(session *v1m0.Session, url string) *http.Request {
+	body, _ := proto.Marshal(session)
+	req, _ := http.NewRequest("POST", url, bytes.NewReader(body))
+	req.Header.Set("Transfer-Encoding", "octet-stream")
+	req.Header.Set("Content-Type", "application/x-protobuf")
+	return req
+}
 
 func main() {
 	var dataDir string
@@ -258,8 +278,10 @@ func main() {
 
 	if session, err := newSession("/Users/janmachacek/OReilly/reactive-architecture-cookbook-code/eas/it/data/labelled", acceptLabelAny()); err == nil {
 		d := sensorDataDuration(session.SensorData.Values, session.SensorData.Sensors)
-		fmt.Printf("Session %s, duration %d", session, d)
+		rq := newRequest(session, "http://localhost:8080")
+		log.Printf("Session %s (%s labels, duration %.fs)", session.SessionId, session.UserLabels, d.Seconds())
+		log.Printf("Request %s", rq)
 	} else {
-		fmt.Println(err)
+		log.Fatalf("%s", err)
 	}
 }
