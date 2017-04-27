@@ -21,6 +21,8 @@ import (
 	"net/http"
 	"github.com/golang/protobuf/proto"
 	"bytes"
+	"github.com/reactivesystemsarchitecture/eas/protocol"
+	"github.com/golang/protobuf/ptypes"
 )
 
 // An alias for function that decides whether to accept a label given its name
@@ -116,11 +118,11 @@ func (b *sessionBuilder) appendData(data *labelledSensorData) error {
 		ed := data.duration()
 		rd := time.Duration((b.restFactor*(1+rand.Float64()/10))*ed.Seconds()) * time.Second
 		d := sensorDataDuration(b.values, b.sensors)
-
-		log.Printf("Appending data of duration %.fs\n", ed.Seconds())
-		log.Printf("Appending rest of duration %.fs\n", rd.Seconds())
-
 		restValues := emptyValues(b.sensors, rd)
+
+		log.Printf("Appending data of duration %.fs (%d samples)\n", ed.Seconds(), len(exerciseValues))
+		log.Printf("Appending rest of duration %.fs (%d samples)\n", rd.Seconds(), len(restValues))
+
 		label := v1m0.Label{
 			StartTime: d.Seconds(),
 			Duration:  ed.Seconds(),
@@ -228,6 +230,11 @@ func readDataFilesIn(dirname string, acceptLabel acceptLabel) (sd []labelledSens
 						return nil, verr
 					}
 
+					w := sensorDataValuesWidth(sensors)
+					if len(values) %w != 0 {
+						return nil, fmt.Errorf("Read %d samples, which does not match the sensor width %d", len(values), w)
+					}
+
 					sd = append(sd, labelledSensorData{
 						data: &v1m0.SensorData{
 							Values:  values,
@@ -236,7 +243,7 @@ func readDataFilesIn(dirname string, acceptLabel acceptLabel) (sd []labelledSens
 						label: label,
 					})
 
-					log.Printf("Read label '%s' for %s", label, sensors)
+					log.Printf("Read label '%s' for %s (%d samples)", label, sensors, len(values))
 				}
 			}
 
@@ -264,23 +271,36 @@ func newSession(dirname string, acceptLabel acceptLabel) (*v1m0.Session, error) 
 	return builder.build(), nil
 }
 
-func newRequest(session *v1m0.Session, url string) *http.Request {
-	body, _ := proto.Marshal(session)
+func postSession(session *v1m0.Session, url string) error {
+	client := http.DefaultClient
+	payload, _ := ptypes.MarshalAny(session)
+	envelope := &protocol.Envelope{
+		CorrelationId: "fadasd",
+		Token: "",
+		Payload: payload,
+	}
+	body, _ := proto.Marshal(envelope)
 	req, _ := http.NewRequest("POST", url, bytes.NewReader(body))
 	req.Header.Set("Transfer-Encoding", "octet-stream")
 	req.Header.Set("Content-Type", "application/x-protobuf")
-	return req
+	resp, err := client.Do(req)
+	log.Printf("Response %s", resp)
+	b, _ := ioutil.ReadAll(resp.Body)
+	log.Printf("Body %s", string(b))
+
+	return err
 }
 
 func main() {
 	var dataDir string
+	var url string
 	flag.StringVar(&dataDir, "dir", "../data", "The directory containing the labelled data")
+	flag.StringVar(&url, "url", "http://localhost:8080/session", "The endpoint to post the data to")
 
 	if session, err := newSession("/Users/janmachacek/OReilly/reactive-architecture-cookbook-code/eas/it/data/labelled", acceptLabelAny()); err == nil {
 		d := sensorDataDuration(session.SensorData.Values, session.SensorData.Sensors)
-		rq := newRequest(session, "http://localhost:8080")
 		log.Printf("Session %s (%s labels, duration %.fs)", session.SessionId, session.UserLabels, d.Seconds())
-		log.Printf("Request %s", rq)
+		postSession(session, url)
 	} else {
 		log.Fatalf("%s", err)
 	}
