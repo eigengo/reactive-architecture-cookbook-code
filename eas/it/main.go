@@ -79,6 +79,8 @@ func newSessionBuilder(sensors []*v1m0.Sensor, restFactor float64) *sessionBuild
 	}
 }
 
+// Returns the number of values that, when flattened, form a single sample for
+// the given `sensors`
 func sensorDataValuesWidth(sensors []*v1m0.Sensor) (result int) {
 	for _, s := range sensors {
 		for _, t := range s.DataTypes {
@@ -96,14 +98,14 @@ func sensorDataValuesWidth(sensors []*v1m0.Sensor) (result int) {
 	return result
 }
 
-// Computes the duration of the values from the sensors
+// Returns the duration that the `values` represent given the `sensors`
 func sensorDataDuration(values []float32, sensors []*v1m0.Sensor) time.Duration {
 	w := sensorDataValuesWidth(sensors)
 	rows := len(values) / w
 	return time.Duration(rows/50.0) * time.Second
 }
 
-// Returns empty values for the given duration of data from sensors
+// Returns empty values for the given `duration` as though it came from `sensors`
 func emptyValues(sensors []*v1m0.Sensor, duration time.Duration) []float32 {
 	w := sensorDataValuesWidth(sensors)
 	return make([]float32, int(float64(w)*duration.Seconds()*50.0))
@@ -178,6 +180,10 @@ func readSensors(r *bufio.Scanner) (sensors []*v1m0.Sensor, err error) {
 
 			sensors = append(sensors, &s)
 		}
+		if len(sensors) == 0 {
+			return nil, fmt.Errorf("'%s' does not contain any sensor definitions", line)
+		}
+
 		return sensors, nil
 	} else {
 		return nil, errors.New("Could not scan")
@@ -284,9 +290,11 @@ func postSession(session *v1m0.Session, url string) error {
 	req.Header.Set("Transfer-Encoding", "octet-stream")
 	req.Header.Set("Content-Type", "application/x-protobuf")
 	if resp, err := client.Do(req); err == nil {
-		log.Printf("Response %s", resp)
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("The server replied with %d", resp.StatusCode)
+		}
 		b, _ := ioutil.ReadAll(resp.Body)
-		log.Printf("Body %s", string(b))
+		log.Printf("OK; body %s", string(b))
 		return nil
 	} else {
 		return err
