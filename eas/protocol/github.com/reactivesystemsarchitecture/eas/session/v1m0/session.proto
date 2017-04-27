@@ -10,8 +10,8 @@ message Session {
 }
 
 message Label {
-  float start_time = 1;
-  float duration = 2;
+  double start_time = 1;
+  double duration = 2;
   string label = 3;
 }
 
