@@ -3,7 +3,8 @@ package main
 import (
 	"flag"
 	"io/ioutil"
-	"github.com/reactivesystemsarchitecture/eas/protocol/session/v1m0"
+	p "github.com/reactivesystemsarchitecture/eas/protocol"
+	ps "github.com/reactivesystemsarchitecture/eas/protocol/session/v1m0"
 	"os"
 	"bufio"
 	"regexp"
@@ -21,7 +22,6 @@ import (
 	"net/http"
 	"github.com/golang/protobuf/proto"
 	"bytes"
-	"github.com/reactivesystemsarchitecture/eas/protocol"
 	"github.com/golang/protobuf/ptypes"
 )
 
@@ -38,11 +38,11 @@ func acceptLabelAny() acceptLabel {
 // A small block of sensor data that can be accumulated to form a Session
 type labelledSensorData struct {
 	label string
-	data  *v1m0.SensorData
+	data  *ps.SensorData
 }
 
 // Returns a slice of the values matching the sensors
-func (d *labelledSensorData) sensors(sensors []*v1m0.Sensor) (values []float32, err error) {
+func (d *labelledSensorData) sensors(sensors []*ps.Sensor) (values []float32, err error) {
 	// We could make this more flexible (d.data.Sensors to be a _subset_ of sensors),
 	// but this is enough for now.
 	if !reflect.DeepEqual(d.data.Sensors, sensors) {
@@ -59,20 +59,20 @@ func (d *labelledSensorData) duration() time.Duration {
 
 type sessionBuilder struct {
 	// the required sensors
-	sensors []*v1m0.Sensor
+	sensors []*ps.Sensor
 	// the amount of rest / exercise.
 	restFactor float64
 
 	// -- working set --
 
 	// the accumulated labels
-	labels []*v1m0.Label
+	labels []*ps.Label
 	// the accumulated data
 	values []float32
 }
 
 // Returns the new session builder
-func newSessionBuilder(sensors []*v1m0.Sensor, restFactor float64) *sessionBuilder {
+func newSessionBuilder(sensors []*ps.Sensor, restFactor float64) *sessionBuilder {
 	return &sessionBuilder{
 		sensors:    sensors,
 		restFactor: restFactor,
@@ -81,15 +81,15 @@ func newSessionBuilder(sensors []*v1m0.Sensor, restFactor float64) *sessionBuild
 
 // Returns the number of values that, when flattened, form a single sample for
 // the given `sensors`
-func sensorDataValuesWidth(sensors []*v1m0.Sensor) (result int) {
+func sensorDataValuesWidth(sensors []*ps.Sensor) (result int) {
 	for _, s := range sensors {
 		for _, t := range s.DataTypes {
 			switch t {
-			case v1m0.SensorDataType_Acceleration:
+			case ps.SensorDataType_Acceleration:
 				result += 3
-			case v1m0.SensorDataType_Rotation:
+			case ps.SensorDataType_Rotation:
 				result += 3
-			case v1m0.SensorDataType_HeartRate:
+			case ps.SensorDataType_HeartRate:
 				result += 1
 			}
 		}
@@ -99,14 +99,14 @@ func sensorDataValuesWidth(sensors []*v1m0.Sensor) (result int) {
 }
 
 // Returns the duration that the `values` represent given the `sensors`
-func sensorDataDuration(values []float32, sensors []*v1m0.Sensor) time.Duration {
+func sensorDataDuration(values []float32, sensors []*ps.Sensor) time.Duration {
 	w := sensorDataValuesWidth(sensors)
 	rows := len(values) / w
 	return time.Duration(rows/50.0) * time.Second
 }
 
 // Returns empty values for the given `duration` as though it came from `sensors`
-func emptyValues(sensors []*v1m0.Sensor, duration time.Duration) []float32 {
+func emptyValues(sensors []*ps.Sensor, duration time.Duration) []float32 {
 	w := sensorDataValuesWidth(sensors)
 	return make([]float32, int(float64(w)*duration.Seconds()*50.0))
 }
@@ -125,7 +125,7 @@ func (b *sessionBuilder) appendData(data *labelledSensorData) error {
 		log.Printf("Appending data of duration %.fs (%d samples)\n", ed.Seconds(), len(exerciseValues))
 		log.Printf("Appending rest of duration %.fs (%d samples)\n", rd.Seconds(), len(restValues))
 
-		label := v1m0.Label{
+		label := ps.Label{
 			StartTime: d.Seconds(),
 			Duration:  ed.Seconds(),
 			Label:     data.label,
@@ -140,12 +140,12 @@ func (b *sessionBuilder) appendData(data *labelledSensorData) error {
 }
 
 // build the session
-func (b *sessionBuilder) build() *v1m0.Session {
-	sensorData := v1m0.SensorData{
+func (b *sessionBuilder) build() *ps.Session {
+	sensorData := ps.SensorData{
 		Values:  b.values,
 		Sensors: b.sensors,
 	}
-	return &v1m0.Session{
+	return &ps.Session{
 		SessionId:       uuid.New().String(),
 		UserLabels:      b.labels,
 		AutomaticLabels: b.labels,
@@ -155,7 +155,7 @@ func (b *sessionBuilder) build() *v1m0.Session {
 
 var sensorsRegexp *regexp.Regexp = regexp.MustCompile("\\W+((\\w+)->\\[([^]]+)])+")
 
-func readSensors(r *bufio.Scanner) (sensors []*v1m0.Sensor, err error) {
+func readSensors(r *bufio.Scanner) (sensors []*ps.Sensor, err error) {
 	if r.Scan() {
 		line := r.Text()
 		matches := sensorsRegexp.FindAllStringSubmatch(line, math.MaxInt32)
@@ -163,16 +163,16 @@ func readSensors(r *bufio.Scanner) (sensors []*v1m0.Sensor, err error) {
 			return nil, fmt.Errorf("'%s' is not a sensor definition", line)
 		}
 		for _, groups := range matches {
-			var s v1m0.Sensor
+			var s ps.Sensor
 
-			if l, ok := v1m0.SensorLocation_value[groups[2]]; ok {
-				s.Location = v1m0.SensorLocation(l)
+			if l, ok := ps.SensorLocation_value[groups[2]]; ok {
+				s.Location = ps.SensorLocation(l)
 			} else {
 				return nil, fmt.Errorf("Bad location %s", groups[2])
 			}
 			for _, dataType := range strings.Split(groups[3], ",") {
-				if dt, ok := v1m0.SensorDataType_value[dataType]; ok {
-					s.DataTypes = append(s.DataTypes, v1m0.SensorDataType(dt))
+				if dt, ok := ps.SensorDataType_value[dataType]; ok {
+					s.DataTypes = append(s.DataTypes, ps.SensorDataType(dt))
 				} else {
 					return nil, fmt.Errorf("Bad data type %s", dataType)
 				}
@@ -242,7 +242,7 @@ func readDataFilesIn(dirname string, acceptLabel acceptLabel) (sd []labelledSens
 					}
 
 					sd = append(sd, labelledSensorData{
-						data: &v1m0.SensorData{
+						data: &ps.SensorData{
 							Values:  values,
 							Sensors: sensors,
 						},
@@ -259,9 +259,9 @@ func readDataFilesIn(dirname string, acceptLabel acceptLabel) (sd []labelledSens
 	}
 }
 
-func newSession(dirname string, acceptLabel acceptLabel) (*v1m0.Session, error) {
-	sensors := []*v1m0.Sensor{
-		{Location: v1m0.SensorLocation_Wrist, DataTypes: []v1m0.SensorDataType{v1m0.SensorDataType_Acceleration}},
+func newSession(dirname string, acceptLabel acceptLabel) (*ps.Session, error) {
+	sensors := []*ps.Sensor{
+		{Location: ps.SensorLocation_Wrist, DataTypes: []ps.SensorDataType{ps.SensorDataType_Acceleration}},
 	}
 	builder := newSessionBuilder(sensors, 2.0)
 	if sds, err := readDataFilesIn(dirname, acceptLabel); err == nil {
@@ -277,10 +277,10 @@ func newSession(dirname string, acceptLabel acceptLabel) (*v1m0.Session, error) 
 	return builder.build(), nil
 }
 
-func postSession(session *v1m0.Session, url string) error {
+func postSession(session *ps.Session, url string) error {
 	client := http.DefaultClient
 	payload, _ := ptypes.MarshalAny(session)
-	envelope := &protocol.Envelope{
+	envelope := &p.Envelope{
 		CorrelationId: "fadasd",
 		Token: "",
 		Payload: payload,
