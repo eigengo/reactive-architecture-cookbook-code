@@ -1,5 +1,5 @@
 syntax = "proto3";
-//package com.reactivesystemsarchitecture;
+package com.reactivesystemsarchitecture.eas.session.v1m0;
 option go_package = "github.com/reactivesystemsarchitecture/eas/protocol/session/v1m0";
 
 message Session {

@@ -12,6 +12,8 @@ import (
 	"strconv"
 	"path"
 	"errors"
+	"math"
+	"time"
 )
 
 type acceptLabel func (string) bool
@@ -27,11 +29,16 @@ type sensorData struct {
 	data *v1m0.SensorData
 }
 
-var sensorsRegexp *regexp.Regexp = regexp.MustCompile(`\W+((\w+)->\[([^]]+)])+`)
+func (s *sensorData)duration() time.Duration {
+	return 0
+}
+
+var sensorsRegexp *regexp.Regexp = regexp.MustCompile("\\W*((\\w+)->\\[([^]]+)])+")
+//var sensorsRegexp *regexp.Regexp = regexp.MustCompile("p([a-z]+)ch")
 func readSensors(r *bufio.Scanner) (sensors []*v1m0.Sensor, err error) {
 	if r.Scan() {
 		line := r.Text()
-		for _, groups := range sensorsRegexp.FindAllStringSubmatch(line, 0) {
+		for _, groups := range sensorsRegexp.FindAllStringSubmatch(line, math.MaxInt32) {
 			var s v1m0.Sensor
 
 			if l, ok := v1m0.SensorLocation_value[groups[2]]; ok {
@@ -48,6 +55,9 @@ func readSensors(r *bufio.Scanner) (sensors []*v1m0.Sensor, err error) {
 			}
 
 			sensors = append(sensors, &s)
+		}
+		if len(sensors) == 0 {
+			return nil, fmt.Errorf("No sensor definitions found in %s", line)
 		}
 		return sensors, nil
 	} else {
@@ -109,8 +119,15 @@ func readDataFilesIn(dirname string, acceptLabel acceptLabel) (sd []sensorData, 
 	}
 }
 
-func newSession(dirname string, acceptLabel acceptLabel) (*v1m0.Session, error) {
+func newSession(dirname string, acceptLabel acceptLabel) (session v1m0.Session, err error) {
+	if sds, err := readDataFilesIn(dirname, acceptLabel); err == nil {
+		for _, sd := range sds {
 
+			fmt.Println(sd.label)
+			fmt.Println(sd.data.Sensors)
+			fmt.Println(sd.data.Values)
+		}
+	}
 
 	return nil, errors.New("f")
 }
@@ -127,15 +144,13 @@ func main() {
 
 	if sds, err := readDataFilesIn("/Users/janmachacek/OReilly/reactive-architecture-cookbook-code/eas/it/data/labelled", acceptLabelAny()); err == nil {
 		for _, sd := range sds {
+
 			fmt.Println(sd.label)
+			fmt.Println(sd.data.Sensors)
 			fmt.Println(sd.data.Values)
 		}
 	} else {
 		fmt.Println(err)
 	}
-
-	line := "Wrist->[Acceleration]"
-	fmt.Println(sensorsRegexp.FindString(line))
-	fmt.Println(sensorsRegexp.FindAllString(line, 0))
 
 }
